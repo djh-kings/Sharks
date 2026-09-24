@@ -6,7 +6,7 @@
 // Term definitions: https://dwc.tdwg.org/terms/
 // Anything without a standard term goes into dynamicProperties as JSON.
 
-import { findSpecies, notSureId } from "./speciesPicker.js";
+import { findSpecies, findGroup, notSureId } from "./speciesPicker.js";
 
 // When the observer is not sure of the species, we record it at the highest
 // level we are confident of: "a shark". Selachimorpha is the superorder
@@ -23,6 +23,7 @@ export const dwcColumns = [
   "decimalLongitude",
   "geodeticDatum",
   "coordinateUncertaintyInMeters",
+  "locality",
   "scientificName",
   "taxonRank",
   "vernacularName",
@@ -55,10 +56,16 @@ export function reportToDwc(report, speciesData) {
   const minDepth = detail.depthMetres ?? effort.minDepthMetres ?? "";
   const maxDepth = detail.depthMetres ?? effort.maxDepthMetres ?? "";
 
+  // "Not sure which catshark" is kept as a remark, not as a taxon: the picker's
+  // shape groups are for recognition and do not match scientific families
+  // exactly. (The biology department should confirm this choice.)
+  const group = report.identification?.speciesGroup ? findGroup(speciesData, report.identification.speciesGroup) : null;
   const identificationRemarks = isAbsence
     ? ""
     : report.identification?.speciesId === notSureId
-      ? "Observer not sure of species"
+      ? group
+        ? `Observer not sure of species; thinks it is one of: ${group.name}`
+        : "Observer not sure of species"
       : `Observer confidence: ${report.identification?.confidence || "not given"}; observer experience: ${observer.experience || "not given"}`;
 
   const remarks = [];
@@ -75,6 +82,7 @@ export function reportToDwc(report, speciesData) {
     decimalLongitude: report.location.longitude,
     geodeticDatum: "WGS84",
     coordinateUncertaintyInMeters: report.location.uncertaintyMetres,
+    locality: report.location.locality || "",
     scientificName: taxon.scientificName,
     taxonRank: taxon.taxonRank,
     vernacularName: taxon.vernacularName,
@@ -100,6 +108,7 @@ export function reportToDwc(report, speciesData) {
       gearType: report.count?.gearType || undefined,
       lengthBand: detail.lengthBand || undefined,
       waterTemperatureCelsius: detail.waterTempCelsius ?? undefined,
+      speciesGroup: report.identification?.speciesGroup || undefined,
       locationPrecision: report.location.precision,
       locationSource: report.location.source,
     }),

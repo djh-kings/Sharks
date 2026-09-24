@@ -9,9 +9,9 @@
 // How far from the true spot the shark could have been, in metres.
 // These become Darwin Core's coordinateUncertaintyInMeters.
 export const precisionOptions = {
-  exact: { label: "Exact spot (I am there now, or the pin is where I saw it)", metres: null },
-  withinOneKm: { label: "Within about 1km", metres: 1000 },
-  generalSite: { label: "General dive site or fishing area (within about 5km)", metres: 5000 },
+  exact: { label: "Exact spot", hint: "The pin is where I saw the shark", metres: null },
+  withinOneKm: { label: "Within about 1km", hint: null, metres: 1000 },
+  generalSite: { label: "General dive site or fishing area", hint: "Within about 5km", metres: 5000 },
 };
 
 // A rough box around UK and Irish waters. We only WARN if a point is outside it,
@@ -85,4 +85,74 @@ export function isInUkIrelandWaters(latitude, longitude) {
     longitude >= ukIrelandBounds.minLon &&
     longitude <= ukIrelandBounds.maxLon
   );
+}
+
+// ---------------------------------------------------------------------------
+// Typed positions
+//
+// Chart plotters and dive computers show positions in degrees and decimal
+// minutes, eg 50° 21.6' N. The direction (N/S, W/E) is chosen with buttons,
+// because the iPhone decimal keypad has no minus sign. So every typed number
+// is positive, and the hemisphere gives the sign.
+// ---------------------------------------------------------------------------
+
+// Reads a typed number. Accepts a comma as the decimal point, as some
+// European keyboards give one. Returns null if it is not a number.
+function readNumber(text) {
+  const cleaned = String(text ?? "").trim().replace(",", ".");
+  if (cleaned === "" || !/^\d+(\.\d*)?$|^\.\d+$/.test(cleaned)) {
+    return null;
+  }
+  return Number(cleaned);
+}
+
+// Turns typed boxes into signed decimal degrees.
+// axis is "lat" or "lon"; format is "ddm" (degrees and minutes) or "decimal".
+// Returns { value, error }. value is null when nothing usable was typed.
+export function parseTypedCoordinate({ axis, format, degrees, minutes, decimal, hemisphere }) {
+  const name = axis === "lat" ? "Latitude" : "Longitude";
+  const maxDegrees = axis === "lat" ? 90 : 180;
+  let value;
+
+  if (format === "decimal") {
+    if (String(decimal ?? "").trim() === "") return { value: null, error: null };
+    value = readNumber(decimal);
+    if (value === null) return { value: null, error: `${name} must be a number, eg ${axis === "lat" ? "50.36" : "4.14"}.` };
+  } else {
+    if (String(degrees ?? "").trim() === "" && String(minutes ?? "").trim() === "") return { value: null, error: null };
+    const wholeDegrees = readNumber(degrees);
+    const minuteValue = String(minutes ?? "").trim() === "" ? 0 : readNumber(minutes);
+    if (wholeDegrees === null || !Number.isInteger(wholeDegrees)) {
+      return { value: null, error: `${name} degrees must be a whole number.` };
+    }
+    if (minuteValue === null) {
+      return { value: null, error: `${name} minutes must be a number.` };
+    }
+    if (minuteValue >= 60) {
+      return { value: null, error: `${name} minutes must be less than 60. You typed ${String(minutes).trim()}.` };
+    }
+    value = wholeDegrees + minuteValue / 60;
+  }
+
+  if (value > maxDegrees) {
+    return { value: null, error: `${name} must be ${maxDegrees} degrees or less.` };
+  }
+  if (!hemisphere) {
+    return { value: null, error: `Choose ${axis === "lat" ? "North or South" : "West or East"} for the ${name.toLowerCase()}.` };
+  }
+  const negative = hemisphere === "S" || hemisphere === "W";
+  return { value: negative ? -value : value, error: null };
+}
+
+// Splits signed decimal degrees into the typed boxes' values.
+export function splitCoordinate(value, axis) {
+  const hemisphere = axis === "lat" ? (value < 0 ? "S" : "N") : value < 0 ? "W" : "E";
+  const abs = Math.abs(value);
+  let degrees = Math.floor(abs);
+  let minutes = Number(((abs - degrees) * 60).toFixed(3));
+  if (minutes >= 60) {
+    degrees += 1;
+    minutes = 0;
+  }
+  return { degrees: String(degrees), minutes: String(minutes), decimal: abs.toFixed(5), hemisphere };
 }

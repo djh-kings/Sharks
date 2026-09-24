@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Shark Sightings</title>
   <meta name="description" content="Report shark sightings in UK and Irish waters to help scientists and conservation charities.">
-  <meta name="theme-color" content="#0b4f6c">
+  <meta name="theme-color" content="#0b4f6c" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1a24" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -14,46 +15,68 @@
 </head>
 <body>
   <header class="siteHeader">
-    <a class="siteTitle" href="index.html" aria-current="page">Shark Sightings</a>
+    <a class="siteTitle" href="index.html" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19h18"/><path d="M6 19c2-5 5-11 11-14-1 5-1 10 1 14"/></svg>Shark Sightings</a>
     <nav class="siteNav" aria-label="Main">
-      <a href="report.html">Report</a>
+      <a href="report.html" class="navWide">Report a sighting</a>
       <a href="sightings.html">My reports</a>
       <a href="species.html">Species guide</a>
     </nav>
   </header>
-  <div id="offlineBanner" class="banner" hidden>You are offline. You can still make a report; it will be saved on this phone.</div>
-
-  <main>
-    <h1>Seen a shark? Tell us.</h1>
-    <p>Divers, dive masters, and fishers see more sharks than any scientist. Every report you make helps build a picture of where sharks live around the UK and Ireland, and how that is changing.</p>
-    <p>You do not need to be an expert. If you are not sure what you saw, say so, and add a photo if you can.</p>
-
-    <a class="button buttonBig" href="report.html">Report a sighting</a>
-    <a class="button buttonBig buttonSecondary" href="report.html?mode=absence">I looked, but saw no sharks</a>
-
-    <p class="notice" data-pending-visible hidden>
-      Reports on this device waiting to be uploaded: <strong data-pending-count>0</strong>.
-      <a href="sightings.html">See them</a>.
-    </p>
-
-    <div class="card">
-      <h2>Why report "no sharks"?</h2>
-      <p>If we only hear about sightings, the data shows where people go diving, not where sharks live. A record of a dive with no sharks is just as useful to a scientist.</p>
+  <div id="offlineBanner" class="banner" role="status" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18"/><path d="M5 12a10 10 0 0 1 4-2.5M12 9a10 10 0 0 1 7 3M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>No signal. You can still make a report; it will be saved on this phone.</span></div>
+  <div class="pendingStrip" data-pending-visible hidden>
+    <div>
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V5M7 10l5-5 5 5"/><path d="M4 17v3h16v-3"/></svg>
+      <p>On this phone, <strong><span data-pending-count>0</span> <span data-pending-noun>reports</span></strong> <span data-pending-verb>are</span> waiting to upload. They will send when the upload service is running and you have signal.</p>
+      <a href="sightings.html">See them</a>
     </div>
+  </div>
 
-    <div class="card">
-      <h2>Works at sea</h2>
-      <p>Once you have opened this site, it works without a signal. Reports are saved on your phone. You can add it to your home screen from your browser's menu.</p>
+  <div class="hero">
+    <svg class="contours" viewBox="0 0 1280 300" preserveAspectRatio="none" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.6" vector-effect="non-scaling-stroke"><path d="M-10 40 C 200 20, 420 60, 640 40 S 1080 20, 1290 44" vector-effect="non-scaling-stroke"/><path d="M-10 80 C 200 54, 420 106, 640 80 S 1080 54, 1290 84" vector-effect="non-scaling-stroke"/><path d="M-10 120 C 200 104, 420 136, 640 120 S 1080 104, 1290 124" vector-effect="non-scaling-stroke"/><path d="M-10 160 C 200 132, 420 188, 640 160 S 1080 132, 1290 164" vector-effect="non-scaling-stroke"/><path d="M-10 200 C 200 180, 420 220, 640 200 S 1080 180, 1290 204" vector-effect="non-scaling-stroke"/><path d="M-10 240 C 200 226, 420 254, 640 240 S 1080 226, 1290 244" vector-effect="non-scaling-stroke"/><path d="M-10 280 C 200 258, 420 302, 640 280 S 1080 258, 1290 284" vector-effect="non-scaling-stroke"/></g></svg>
+    <div class="heroInner">
+      <div>
+        <p class="eyebrow">UK and Irish waters</p>
+        <h1>Seen a shark?<br>Tell us.</h1>
+        <p>Divers, dive masters, and fishers see more sharks than any scientist. Every report helps show where sharks live around the UK and Ireland, and how that is changing.</p>
+        <div class="homeActions">
+          <a class="button buttonBig" href="report.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19h18"/><path d="M6 19c2-5 5-11 11-14-1 5-1 10 1 14"/></svg>Report a sighting</a>
+          <a class="button buttonBig buttonSecondary" href="report.html?mode=absence">I looked, but saw no sharks</a>
+        </div>
+        <p class="reassure"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7v.5M12 17.5v.5"/></svg><span>You do not need to be an expert. &ldquo;Not sure&rdquo; is a useful answer, especially with a photo.</span></p>
+      </div>
+      <section class="card" aria-labelledby="whyHeading">
+        <h2 id="whyHeading">Why &ldquo;no sharks&rdquo; counts</h2>
+        <div class="whyFigures">
+          <figure><svg viewBox="0 0 138 92" aria-hidden="true" focusable="false"><rect class="whySea" x="1" y="1" width="136" height="90" rx="8" stroke-width="1.5"/><path class="whyLand" d="M1 60 C 30 52, 40 70, 70 64 S 110 80, 137 72 L 137 91 L 1 91 Z"/><circle class="whySeen" cx="34" cy="40" r="6"/><circle class="whySeen" cx="44" cy="30" r="6"/><circle class="whySeen" cx="52" cy="44" r="6"/><circle class="whySeen" cx="40" cy="50" r="6"/></svg><figcaption><strong>Sightings only.</strong> Shows where people dive.</figcaption></figure>
+          <figure><svg viewBox="0 0 138 92" aria-hidden="true" focusable="false"><rect class="whySea" x="1" y="1" width="136" height="90" rx="8" stroke-width="1.5"/><path class="whyLand" d="M1 60 C 30 52, 40 70, 70 64 S 110 80, 137 72 L 137 91 L 1 91 Z"/><circle class="whySeen" cx="34" cy="40" r="6"/><circle class="whySeen" cx="44" cy="30" r="6"/><circle class="whySeen" cx="52" cy="44" r="6"/><circle class="whySeen" cx="40" cy="50" r="6"/><circle class="whyNone" cx="96" cy="24" r="5.5"/><circle class="whyNone" cx="112" cy="42" r="5.5"/><circle class="whyNone" cx="84" cy="46" r="5.5"/><circle class="whyNone" cx="120" cy="20" r="5.5"/><circle class="whyNone" cx="70" cy="20" r="5.5"/></svg><figcaption><strong>With &ldquo;no sharks&rdquo;.</strong> Shows where sharks live.</figcaption></figure>
+        </div>
+        <p>If we only hear about sightings, the data shows where people go diving, not where sharks live. A dive with no sharks tells scientists as much as a dive with one. Please report both.</p>
+      </section>
     </div>
+  </div>
 
-    <div class="card">
-      <h2>Who uses the data?</h2>
-      <p>Reports are shared with the Biology Department at King's College School, Wimbledon, and with shark conservation charities. Exact locations are not published, to protect vulnerable species.</p>
+  <main class="mainWide">
+    <div class="infoCards">
+      <section class="card">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18"/><path d="M5 12a10 10 0 0 1 4-2.5M12 9a10 10 0 0 1 7 3M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg>
+        <h2>Works with no signal</h2>
+        <p>Once you have opened this site, you can report at sea. Reports are kept on your phone. You can add it to your home screen from your browser&rsquo;s menu.</p>
+      </section>
+      <section class="card">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <h2>Who sees your report</h2>
+        <p>The Biology Department at King&rsquo;s College School, Wimbledon, and shark conservation charities. Exact locations are not published, to protect vulnerable species.</p>
+      </section>
+      <section class="card">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg>
+        <h2>Learn the sharks</h2>
+        <p>The <a href="species.html">species guide</a> shows the sharks found in UK and Irish waters, and how to tell lookalikes apart.</p>
+      </section>
     </div>
   </main>
 
   <footer class="siteFooter">
-    <p>A project of King's College School, Wimbledon. This is a development version: the upload service is not running yet, so reports stay on your device.</p>
+    <p>A project of King&rsquo;s College School, Wimbledon. This is a development version: the upload service is not running yet, so reports stay on your device.</p>
     <p>Map data &copy; OpenStreetMap contributors.</p>
   </footer>
 </body>

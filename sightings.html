@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My reports | Shark Sightings</title>
-  <meta name="theme-color" content="#0b4f6c">
+  <meta name="description" content="Report shark sightings in UK and Irish waters to help scientists and conservation charities.">
+  <meta name="theme-color" content="#0b4f6c" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1a24" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -16,30 +18,55 @@
 </head>
 <body>
   <header class="siteHeader">
-    <a class="siteTitle" href="index.html">Shark Sightings</a>
+    <a class="siteTitle" href="index.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19h18"/><path d="M6 19c2-5 5-11 11-14-1 5-1 10 1 14"/></svg>Shark Sightings</a>
     <nav class="siteNav" aria-label="Main">
-      <a href="report.html">Report</a>
+      <a href="report.html" class="navWide">Report a sighting</a>
       <a href="sightings.html" aria-current="page">My reports</a>
       <a href="species.html">Species guide</a>
     </nav>
   </header>
-  <div id="offlineBanner" class="banner" hidden>You are offline.</div>
+  <div id="offlineBanner" class="banner" role="status" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18"/><path d="M5 12a10 10 0 0 1 4-2.5M12 9a10 10 0 0 1 7 3M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>No signal. Your reports are safe on this phone.</span></div>
 
-  <main>
-    <h1>My reports</h1>
-    <p>These are the reports saved on this device. Nobody else can see them yet.</p>
+  <main class="mainWide">
+    <div class="pageHeading">
+      <h1>My reports</h1>
+      <div class="buttonRow">
+        <button type="button" class="button buttonSecondary" id="exportButton"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg>Download as a spreadsheet (CSV)</button>
+        <a class="button" href="report.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19h18"/><path d="M6 19c2-5 5-11 11-14-1 5-1 10 1 14"/></svg>Report a sighting</a>
+      </div>
+    </div>
+    <p id="exportStatus" class="hint" aria-live="polite"></p>
 
-    <div id="reportsMap" class="map mapLarge" role="region" aria-label="Map of your reports"></div>
-
-    <div class="card">
-      <h2>Export for scientists</h2>
-      <p>Download your reports as a Darwin Core CSV file. This is the standard format used by biological record centres and conservation charities.</p>
-      <button type="button" class="button" id="exportButton">Download CSV</button>
-      <p id="exportStatus" class="hint" aria-live="polite"></p>
+    <div class="notice" data-pending-visible hidden>
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V5M7 10l5-5 5 5"/><path d="M4 17v3h16v-3"/></svg>
+      <p><strong>On this phone, <span data-pending-count>0</span> <span data-pending-noun>reports</span> <span data-pending-verb>are</span> waiting to upload.</strong> They are safe on this device. Nobody else can see them yet.</p>
     </div>
 
-    <h2>All reports</h2>
-    <div id="reportsList"><p>Loading...</p></div>
+    <div class="switcher reportsSwitch" role="radiogroup" aria-label="Show reports as">
+      <label class="segment"><input type="radio" name="reportsView" value="list" checked>List</label>
+      <label class="segment"><input type="radio" name="reportsView" value="map">Map</label>
+    </div>
+
+    <div class="reportsLayout" id="reportsLayout" data-view="list">
+      <section class="reportsMapPanel" aria-label="Map of your reports">
+        <div class="switcher mapStyle" id="reportsMapStyleSwitch" role="radiogroup" aria-label="Map style">
+            <label class="segment"><input type="radio" name="reportsMapStyle" value="map" checked><span>Map</span></label>
+            <label class="segment"><input type="radio" name="reportsMapStyle" value="satellite"><span>Satellite</span></label>
+          </div>
+          <div id="reportsMap" class="map mapLarge"></div>
+        <p class="hint small">The numbers on the map match the list. Circles show how accurate each location is. Locations are shown only to you.</p>
+      </section>
+      <section class="reportsListPanel" aria-labelledby="listHeading">
+        <h2 id="listHeading" class="visuallyHidden">All reports, newest first</h2>
+        <div id="reportsList"><p>Loading...</p></div>
+        <p class="hint">The spreadsheet uses Darwin Core, the standard format that biological record centres and conservation charities use for species records.</p>
+      </section>
+    </div>
   </main>
+
+  <footer class="siteFooter">
+    <p>A project of King&rsquo;s College School, Wimbledon. This is a development version: the upload service is not running yet, so reports stay on your device.</p>
+    <p>Map data &copy; OpenStreetMap contributors.</p>
+  </footer>
 </body>
 </html>

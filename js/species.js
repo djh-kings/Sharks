@@ -4,6 +4,7 @@
 
 import { loadSpeciesData, findSpecies } from "./speciesPicker.js";
 import { escapeHtml } from "./format.js";
+import { icon } from "./icons.js";
 
 async function init() {
   const guide = document.getElementById("guide");
@@ -19,26 +20,31 @@ async function init() {
   let html = "";
   for (const group of data.groups) {
     html += `
-      <section class="card">
-        <h2>${escapeHtml(group.name)}</h2>
-        <img src="${group.silhouette}" alt="" class="groupSilhouette" width="120" height="48">
-        <p class="hint">${escapeHtml(group.hint)}</p>`;
+      <section class="guideGroup" aria-labelledby="group-${group.id}">
+        <div class="guideGroupHead">
+          <span class="shapeImage"><img src="${group.silhouette}" alt="" width="240" height="96"></span>
+          <div>
+            <h2 id="group-${group.id}">${escapeHtml(group.name)}</h2>
+            <p>${escapeHtml(group.hint)}</p>
+          </div>
+        </div>
+        <div class="guideGrid">`;
     for (const species of data.species.filter((s) => s.group === group.id)) {
-      const features = species.keyFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("");
+      const features = species.keyFeatures.map((f) => `<li>${icon("check")}<span>${escapeHtml(f)}</span></li>`).join("");
       const lookalikes = species.lookalikes
         .map((id) => findSpecies(data, id))
         .filter(Boolean)
-        .map((s) => escapeHtml(s.commonName))
+        .map((s) => `<a href="#${s.id}">${escapeHtml(s.commonName)}</a>`)
         .join(", ");
       html += `
-        <article class="guideSpecies" id="${species.id}">
-          <h3>${escapeHtml(species.commonName)}</h3>
-          <p class="speciesCardSci">${escapeHtml(species.scientificName)}</p>
-          <ul>${features}</ul>
-          ${lookalikes ? `<p class="hint">Easily confused with: ${lookalikes}.</p>` : ""}
-        </article>`;
+          <article class="card guideSpecies" id="${species.id}">
+            <h3>${escapeHtml(species.commonName)}</h3>
+            <p class="speciesCardSci">${escapeHtml(species.scientificName)}</p>
+            <ul class="features">${features}</ul>
+            ${lookalikes ? `<p class="hint"><strong>Easily confused with:</strong> ${lookalikes}.</p>` : ""}
+          </article>`;
     }
-    html += "</section>";
+    html += "</div></section>";
   }
   guide.innerHTML = html;
 }

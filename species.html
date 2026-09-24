@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Species guide | Shark Sightings</title>
-  <meta name="theme-color" content="#0b4f6c">
+  <meta name="description" content="Report shark sightings in UK and Irish waters to help scientists and conservation charities.">
+  <meta name="theme-color" content="#0b4f6c" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1a24" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -14,19 +16,24 @@
 </head>
 <body>
   <header class="siteHeader">
-    <a class="siteTitle" href="index.html">Shark Sightings</a>
+    <a class="siteTitle" href="index.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19h18"/><path d="M6 19c2-5 5-11 11-14-1 5-1 10 1 14"/></svg>Shark Sightings</a>
     <nav class="siteNav" aria-label="Main">
-      <a href="report.html">Report</a>
+      <a href="report.html" class="navWide">Report a sighting</a>
       <a href="sightings.html">My reports</a>
       <a href="species.html" aria-current="page">Species guide</a>
     </nav>
   </header>
-  <div id="offlineBanner" class="banner" hidden>You are offline. The guide still works.</div>
+  <div id="offlineBanner" class="banner" role="status" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18"/><path d="M5 12a10 10 0 0 1 4-2.5M12 9a10 10 0 0 1 7 3M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>No signal. The guide still works.</span></div>
 
-  <main>
+  <main class="mainWide">
     <h1>Sharks of UK and Irish waters</h1>
-    <p id="draftNotice" class="notice" hidden>This guide is a draft and is being checked by biologists. Please do not rely on it yet.</p>
+    <p id="draftNotice" class="notice noticeWarning" role="status" hidden><strong>This guide is a draft.</strong>&nbsp;It is being checked by biologists. Please do not rely on it yet.</p>
     <div id="guide"><p>Loading...</p></div>
   </main>
+
+  <footer class="siteFooter">
+    <p>A project of King&rsquo;s College School, Wimbledon. This is a development version: the upload service is not running yet, so reports stay on your device.</p>
+    <p>Map data &copy; OpenStreetMap contributors.</p>
+  </footer>
 </body>
 </html>
