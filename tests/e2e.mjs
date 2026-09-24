@@ -6,8 +6,11 @@
 //  2. The photo's location and time are used to pre-fill the form
 //  3. The stored photo has had its EXIF metadata removed
 //  4. An unfinished report can be resumed after reloading
-//  5. With the network OFF, the app still loads and an absence report saves
-//  6. The Darwin Core CSV export has the right columns and one row per report
+//  5. The species picker: shapes, "Not sure which", key features, lookalikes
+//  6. Typed positions in degrees and minutes, with North/South and West/East
+//  7. With the network OFF, the app still loads and an absence report saves
+//  8. The Darwin Core CSV export has the right columns and one row per report
+//  9. No sideways scrolling at 320px, 375px, 768px, and 1280px
 
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
@@ -87,6 +90,23 @@ async function expectStep(page, text) {
   await page.waitForFunction((t) => document.getElementById("progressText").textContent.includes(t), text);
 }
 
+// Radios and checkboxes are drawn as large rows or buttons, with the real
+// input hidden inside. Tap the row, as a user would.
+async function choose(page, name, value) {
+  await page.click(`label:has(> input[name="${name}"][value="${value}"])`);
+}
+
+// Types into a box and leaves it, so its "change" event fires.
+async function type(page, selector, text) {
+  await page.fill(selector, text);
+  await page.dispatchEvent(selector, "change");
+}
+
+// True if the page is wider than the screen (so the user would have to scroll sideways).
+async function scrollsSideways(page) {
+  return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+}
+
 // ---- The test ----
 
 await mkdir(outputDir, { recursive: true });
@@ -148,24 +168,27 @@ try {
 
   console.log("Sighting report");
   await page.goto(`${baseUrl}/report.html`);
-  await expectStep(page, "Step one of nine: About you");
+  await expectStep(page, "Before you start");
+  check("first report asks about you first", await page.isVisible('[data-step="observer"]'));
   check("Back and Save hidden on the first step", (await page.isHidden("#backButton")) && (await page.isHidden("#submitButton")));
+  check("no sideways scrolling on a 375px phone", !(await scrollsSideways(page)));
 
   await next(page);
   check("validation blocks an empty first step", await page.isVisible("#errorSummary"));
 
-  await page.check('input[name="role"][value="diver"]');
-  await page.check('input[name="experience"][value="some"]');
+  await choose(page, "role", "diver");
+  await choose(page, "experience", "some");
   await page.fill("#observerName", "Test Diver");
   await page.screenshot({ path: `${outputDir}/02-about-you.png`, fullPage: true });
   await next(page);
-  await expectStep(page, "Photos");
+  await expectStep(page, "Stage one of five: Photo");
+  check("five named stages shown", (await page.locator("#stageList li").count()) === 5);
 
   // Resume test: reload mid-report and continue.
   await page.reload();
   check("resume panel appears after reload", await page.isVisible("#resumePanel"));
   await page.click("#resumeButton");
-  await expectStep(page, "Photos");
+  await expectStep(page, "Photo");
   check("resumed on the photo step with name kept", (await page.inputValue("#observerName")) === "Test Diver");
 
   await page.setInputFiles("#photoInput", { name: "shark.jpg", mimeType: "image/jpeg", buffer: photo });
@@ -176,54 +199,89 @@ try {
   await page.screenshot({ path: `${outputDir}/03-photo.png`, fullPage: true });
   await next(page);
 
-  await expectStep(page, "Where");
+  await expectStep(page, "Stage two of five: Where");
   check("latitude came from the photo", (await page.inputValue("#latitude")) === "50.35000");
   check("longitude came from the photo", (await page.inputValue("#longitude")) === "-4.15000");
+  check("position shown in degrees and minutes", (await page.textContent("#positionText")) === "50° 21.00′ N4° 09.00′ W");
+  check("typed boxes filled in, with West chosen", (await page.inputValue("#lonMinutes")) === "9" && (await page.isChecked('input[name="lonHemisphere"][value="W"]')));
+  check("date and time came from the photo", (await page.inputValue("#eventDate")) === "2026-07-20T09:00");
+  check("date shown in house style", (await page.textContent("#whenText")) === "Monday 20th July 2026 at 9.00am");
+  check("says where the time came from", (await page.textContent("#whenSource")) === "Taken from your photo");
+
   await page.click("#gpsButton");
   await page.waitForFunction(() => document.getElementById("latitude").value === "50.30000");
   check("GPS button fills the device position", true);
   check("GPS accuracy is reported", (await page.textContent("#gpsStatus")).includes("15m"));
-  await page.check('input[name="precision"][value="withinOneKm"]');
+
+  // Typing a position: minutes of 60 or more must be refused, with a clear message.
+  await page.click("#typePosition summary");
+  await type(page, "#lonMinutes", "68.4");
+  check("minutes over 60 are refused", (await page.textContent("#lonError")).includes("less than 60"));
+  await next(page);
+  check("a bad typed position blocks Next", (await page.textContent("#errorSummary")).includes("less than 60"));
+  await type(page, "#lonMinutes", "9");
+  check("a typed position is saved as signed decimal degrees", (await page.inputValue("#longitude")) === "-4.15000");
+
+  await choose(page, "precision", "withinOneKm");
+  await page.fill("#locality", "Hand Deeps");
   await page.screenshot({ path: `${outputDir}/04-where.png`, fullPage: true });
   await next(page);
 
-  await expectStep(page, "When");
-  check("date and time came from the photo", (await page.inputValue("#eventDate")) === "2026-07-20T09:00");
-  check("date shown in house style", (await page.textContent("#eventDateHint")) === "Monday 20th July 2026 at 9.00am");
-  await next(page);
-
-  await expectStep(page, "What");
+  await expectStep(page, "Stage three of five: What");
   await next(page);
   check("species is required", await page.isVisible("#errorSummary"));
-  await page.click('label.speciesCard:has(input[value="smallSpottedCatshark"])');
+  check("Not sure is offered first", (await page.locator("#speciesPicker input[name='speciesId']").first().getAttribute("value")) === "notSure");
+  await page.click('.shapeButton[data-group="catsharks"]');
+  check("choosing a shape shows its species", await page.isVisible('.groupPanel[data-group="catsharks"]'));
+  check("each shape has its own Not sure", await page.isVisible('input[value="notSure-catsharks"] >> xpath=..'));
+  await choose(page, "speciesId", "smallSpottedCatshark");
   check("key features shown for chosen species", (await page.textContent("#speciesDetail")).includes("nostrils"));
+  await page.screenshot({ path: `${outputDir}/05-what.png`, fullPage: true });
+
+  await page.click('[data-compare="nursehound"]');
+  check("lookalikes can be compared", await page.isVisible("#compareDialog"));
+  check("comparison shows both species", (await page.textContent("#compareDialog")).includes("Fewer, larger dark spots"));
+  await page.screenshot({ path: `${outputDir}/05b-compare.png`, fullPage: true });
+  await page.click('#compareDialog [data-choose="smallSpottedCatshark"]');
+  check("choosing from the comparison closes it", await page.isHidden("#compareDialog"));
+
   await next(page);
   check("confidence is required for a named species", (await page.textContent("#errorSummary")).includes("how sure"));
-  await page.check('input[name="confidence"][value="fairlySure"]');
-  await page.screenshot({ path: `${outputDir}/05-what.png`, fullPage: true });
+  await choose(page, "confidence", "fairlySure");
   await next(page);
 
-  await expectStep(page, "How many");
+  await expectStep(page, "Stage three of five: What");
+  check("how many is part of the What stage", await page.isVisible('[data-step="count"]'));
   await page.fill("#individualCount", "2");
-  await page.check('input[name="encounterType"][value="seenUnderwater"]');
+  await choose(page, "encounterType", "seenUnderwater");
   check("fishing method hidden when not caught", await page.isHidden("#gearType"));
   await next(page);
 
-  await expectStep(page, "More detail");
-  await page.check('input[name="lengthBand"][value="under1m"]');
-  await page.check('input[name="behaviour"][value="restingOnSeabed"]');
+  await expectStep(page, "Stage four of five: Extras");
+  check("the extras can be skipped", await page.isVisible("#skipButton"));
+  await choose(page, "durationPreset", "45");
+  check("duration buttons fill in the minutes", (await page.inputValue("#durationMinutes")) === "45");
+  await page.click("#sharkFold summary");
+  await choose(page, "lengthBand", "under1m");
+  await choose(page, "behaviour", "restingOnSeabed");
   await page.fill("#depthMetres", "12");
+  await page.screenshot({ path: `${outputDir}/06-extras.png`, fullPage: true });
   await next(page);
 
-  await expectStep(page, "Your dive or trip");
-  await page.fill("#durationMinutes", "45");
-  await next(page);
+  await expectStep(page, "Stage five of five: Check");
+  let review = await page.textContent("#reviewSummary");
+  check("check screen shows the species", review.includes("Small-spotted catshark"));
+  check("check screen shows the date in house style", review.includes("Monday 20th July 2026 at 9.00am"));
+  check("check screen shows the site name", review.includes("Hand Deeps"));
+  check("check screen shows who is reporting", review.includes("Diver or snorkeller"));
 
-  await expectStep(page, "Check and save");
-  const review = await page.textContent("#reviewSummary");
-  check("review shows the species", review.includes("Small-spotted catshark"));
-  check("review shows the date in house style", review.includes("Monday 20th July 2026 at 9.00am"));
-  await page.screenshot({ path: `${outputDir}/06-review.png`, fullPage: true });
+  // "Change" goes to the step, and comes straight back.
+  await page.click('#reviewSummary [data-goto="what"]');
+  await expectStep(page, "What");
+  check("Change offers a way back to the check screen", (await page.textContent("#nextButton")) === "Back to check");
+  await next(page);
+  await expectStep(page, "Check");
+  await page.screenshot({ path: `${outputDir}/07-check.png`, fullPage: true });
   await page.click("#submitButton");
   await page.waitForSelector("#donePanel:not([hidden])");
   check("pending count shown in words", (await page.textContent("#donePanel [data-pending-count]")) === "one");
@@ -243,42 +301,64 @@ try {
   });
   check("one report saved", stored.count === 1);
   check("report is pending upload", stored.report.syncStatus === "pending");
+  check("species saved", stored.report.identification.speciesId === "smallSpottedCatshark");
   check("uncertainty is 1000m for 'within 1km'", stored.report.location.uncertaintyMetres === 1000);
+  check("site name saved", stored.report.location.locality === "Hand Deeps");
+  check("time spent looking saved", stored.report.effort.durationMinutes === 45);
   check("stored photo has no EXIF", stored.photoHasExif === false);
   check("stored photo resized to 1600px", stored.photoWidth === 1600);
   check("event date has a UTC offset", /[+-]\d\d:\d\d$/.test(stored.report.eventDate));
 
+  console.log("Home page with a report waiting");
+  await page.goto(`${baseUrl}/index.html`);
+  check("home says one report is waiting", (await page.textContent(".pendingStrip p")).includes("one report is waiting"));
+
   console.log("Offline absence report");
   await context.setOffline(true);
   await page.goto(`${baseUrl}/report.html?mode=absence`);
-  check("report page loads offline", (await page.textContent("h1")) === "I looked, but saw no sharks");
+  check("report page loads offline", (await page.textContent("#pageTitle")) === "No sharks seen");
   check("offline banner shown", await page.isVisible("#offlineBanner"));
-  await expectStep(page, "Step one of five");
-  check("role remembered from last report", await page.isChecked('input[name="role"][value="diver"]'));
-  await next(page);
-  await expectStep(page, "Where");
+  await expectStep(page, "Stage one of three: Where");
+  check("about you not asked again", await page.isHidden('[data-step="observer"]'));
   check("offline map note shown", await page.isVisible("#mapOfflineNote"));
-  await page.fill("#latitude", "50.2");
-  await page.fill("#longitude", "-4.3");
-  await page.check('input[name="precision"][value="generalSite"]');
-  await page.screenshot({ path: `${outputDir}/07-offline-where.png`, fullPage: true });
+  check("map hidden offline", await page.isHidden("#locationMap"));
+  check("typed position opens by itself offline", await page.evaluate(() => document.getElementById("typePosition").open));
+
+  // The smallest phones: 320px wide.
+  await page.setViewportSize({ width: 320, height: 640 });
+  check("no sideways scrolling on a 320px phone", !(await scrollsSideways(page)));
+  check("stage names hidden on a 320px phone", await page.evaluate(() => document.querySelector(".stageName").getBoundingClientRect().width <= 1));
+  await page.screenshot({ path: `${outputDir}/08-offline-where-320.png`, fullPage: true });
+  await page.setViewportSize({ width: 375, height: 812 });
+
+  await type(page, "#latDegrees", "50");
+  await type(page, "#latMinutes", "12");
+  await type(page, "#lonDegrees", "4");
+  await type(page, "#lonMinutes", "18");
+  check("typed latitude saved", (await page.inputValue("#latitude")) === "50.20000");
+  check("typed longitude saved as West", (await page.inputValue("#longitude")) === "-4.30000");
+  await choose(page, "precision", "generalSite");
   await next(page);
-  await expectStep(page, "When");
-  await next(page);
-  await expectStep(page, "Your dive or trip");
+  await expectStep(page, "Stage two of three: Your trip");
+  check("no shark questions on a no-sharks report", await page.isHidden("#sharkFold"));
   await next(page);
   check("absence record requires time spent looking", (await page.textContent("#errorSummary")).includes("how long"));
   await page.fill("#durationMinutes", "60");
   await next(page);
+  await expectStep(page, "Stage three of three: Check");
+  review = await page.textContent("#reviewSummary");
+  check("role remembered from last report", review.includes("Diver or snorkeller"));
   await page.click("#submitButton");
   await page.waitForSelector("#donePanel:not([hidden])");
   check("absence report saved offline", (await page.textContent("#donePanel [data-pending-count]")) === "two");
+  await context.setOffline(false);
 
   console.log("Reports page and export");
   await page.goto(`${baseUrl}/sightings.html`);
   await page.waitForSelector(".reportCard");
   check("both reports listed", (await page.locator(".reportCard").count()) === 2);
-  await page.screenshot({ path: `${outputDir}/08-reports.png`, fullPage: true });
+  check("status shown in words, not colour alone", (await page.textContent("#reportsList")).includes("Waiting to upload"));
+  await page.screenshot({ path: `${outputDir}/09-reports.png`, fullPage: true });
 
   const [download] = await Promise.all([page.waitForEvent("download"), page.click("#exportButton")]);
   const csv = await readFile(await download.path(), "utf8");
@@ -286,16 +366,43 @@ try {
   const headers = lines[0].split(",");
   check("CSV has a header and two rows", lines.length === 3);
   for (const term of ["occurrenceID", "eventDate", "decimalLatitude", "decimalLongitude",
-    "coordinateUncertaintyInMeters", "scientificName", "occurrenceStatus", "samplingEffort"]) {
+    "coordinateUncertaintyInMeters", "locality", "scientificName", "occurrenceStatus", "samplingEffort"]) {
     check(`CSV has Darwin Core column ${term}`, headers.includes(term));
   }
   check("CSV contains the catshark by scientific name", csv.includes("Scyliorhinus canicula"));
+  check("CSV contains the site name", csv.includes("Hand Deeps"));
   check("CSV contains an absence record", csv.includes(",absent,"));
+
+  const groupRemark = await page.evaluate(async () => {
+    const { reportToDwc } = await import("./js/exportDwc.js");
+    const { loadSpeciesData } = await import("./js/speciesPicker.js");
+    const data = await loadSpeciesData();
+    const report = {
+      id: "x", recordType: "sighting", eventDate: "2026-07-20T09:00:00+01:00",
+      location: { latitude: 50, longitude: -4, uncertaintyMetres: 1000 },
+      identification: { speciesId: "notSure", speciesGroup: "catsharks", confidence: null },
+      count: { individualCount: 1 }, observer: {},
+    };
+    return reportToDwc(report, data);
+  });
+  check("'Not sure which catshark' keeps the group as a remark", groupRemark.identificationRemarks.includes("Catsharks") && groupRemark.scientificName === "Selachimorpha");
 
   console.log("Species guide");
   await page.goto(`${baseUrl}/species.html`);
   await page.waitForSelector(".guideSpecies");
   check("draft warning shown on guide", await page.isVisible("#draftNotice"));
+
+  console.log("Tablets and computers");
+  for (const [width, height, name] of [[768, 1024, "tablet"], [1280, 900, "computer"]]) {
+    await page.setViewportSize({ width, height });
+    for (const [path, label] of [["index.html", "home"], ["sightings.html", "reports"], ["species.html", "guide"]]) {
+      await page.goto(`${baseUrl}/${path}`);
+      await page.waitForLoadState("networkidle");
+      check(`no sideways scrolling: ${label}, ${name}`, !(await scrollsSideways(page)));
+      await page.screenshot({ path: `${outputDir}/10-${label}-${name}.png`, fullPage: true });
+    }
+  }
+  await page.setViewportSize({ width: 375, height: 812 });
 
   check("no JavaScript errors", pageErrors.length === 0 || (console.log(pageErrors), false));
   console.log(`\nAll ${passed} checks passed. Screenshots in ${outputDir}/`);

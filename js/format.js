@@ -64,6 +64,24 @@ export function formatCoords(latitude, longitude) {
   return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
 }
 
+// Degrees and minutes, as a chart plotter shows them: "50° 21.62′ N".
+export function formatCoordinate(value, axis) {
+  const hemisphere = axis === "lat" ? (value < 0 ? "S" : "N") : value < 0 ? "W" : "E";
+  const abs = Math.abs(value);
+  let degrees = Math.floor(abs);
+  let minutes = (abs - degrees) * 60;
+  if (Number(minutes.toFixed(2)) >= 60) {
+    degrees += 1;
+    minutes = 0;
+  }
+  return `${degrees}° ${minutes.toFixed(2).padStart(5, "0")}′ ${hemisphere}`;
+}
+
+// "50° 21.62′ N, 4° 08.40′ W"
+export function formatPosition(latitude, longitude) {
+  return `${formatCoordinate(latitude, "lat")}, ${formatCoordinate(longitude, "lon")}`;
+}
+
 // Always escape user-entered text before putting it into innerHTML.
 export function escapeHtml(text) {
   return String(text ?? "")

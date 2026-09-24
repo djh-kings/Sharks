@@ -6,7 +6,7 @@
 // IMPORTANT: when you change any file listed below, increase cacheVersion.
 // Otherwise phones that already have the app will keep the old copy.
 
-const cacheVersion = "v1";
+const cacheVersion = "v2";
 const cacheName = `sharkSightings-${cacheVersion}`;
 
 const appFiles = [
@@ -21,6 +21,7 @@ const appFiles = [
   "js/app.js",
   "js/exportDwc.js",
   "js/format.js",
+  "js/icons.js",
   "js/geo.js",
   "js/photos.js",
   "js/report.js",

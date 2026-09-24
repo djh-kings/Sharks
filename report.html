@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Report a sighting | Shark Sightings</title>
-  <meta name="theme-color" content="#0b4f6c">
+  <meta name="theme-color" content="#0b4f6c" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1a24" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -18,21 +19,15 @@
 </head>
 <body>
   <header class="siteHeader">
-    <a class="siteTitle" href="index.html">Shark Sightings</a>
-    <nav class="siteNav" aria-label="Main">
-      <a href="report.html" aria-current="page">Report</a>
-      <a href="sightings.html">My reports</a>
-      <a href="species.html">Species guide</a>
-    </nav>
+    <span class="reportTitle"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19h18"/><path d="M6 19c2-5 5-11 11-14-1 5-1 10 1 14"/></svg><span id="pageTitle">Report a sighting</span></span>
+    <button type="button" class="headerButton" id="saveExitButton">Save and exit</button>
   </header>
-  <div id="offlineBanner" class="banner" hidden>You are offline. Your report will be saved on this phone.</div>
+  <div id="offlineBanner" class="banner" role="status" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18"/><path d="M5 12a10 10 0 0 1 4-2.5M12 9a10 10 0 0 1 7 3M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span>No signal. Your report will be saved on this phone.</span></div>
 
   <main>
-    <h1 id="pageTitle">Report a shark sighting</h1>
-
     <!-- Shown if an unfinished report was found. -->
     <div id="resumePanel" class="card" hidden>
-      <h2>You have an unfinished report</h2>
+      <h1>You have an unfinished report</h1>
       <p id="resumeText"></p>
       <div class="buttonRow">
         <button type="button" class="button" id="resumeButton">Continue it</button>
@@ -41,41 +36,40 @@
     </div>
 
     <form id="reportForm" novalidate hidden>
-      <p class="progress" id="progressText" aria-live="polite"></p>
-      <div class="progressBar" aria-hidden="true"><span id="progressFill"></span></div>
+      <!-- Progress: the stages are drawn by report.js, because they depend on the kind of report. -->
+      <div class="progress">
+        <p class="progressText" id="progressText" aria-live="polite"></p>
+        <ol class="stages" id="stageList" aria-label="Report stages"></ol>
+      </div>
 
       <div id="errorSummary" class="errorSummary" role="alert" tabindex="-1" hidden></div>
 
-      <!-- STEP: About you -->
+      <!-- STEP: About you. Asked before the first report only, then remembered. -->
       <section class="step" data-step="observer" data-title="About you" hidden>
         <h2 tabindex="-1">About you</h2>
-        <p class="hint">This helps scientists judge how to use each record. Every level of experience is welcome.</p>
-
+        <p class="stepLead">This helps scientists judge how to use each record. Every level of experience is welcome. This phone will remember your answers for next time.</p>
         <fieldset>
           <legend>Which best describes you today?</legend>
-          <label class="choice"><input type="radio" name="role" value="diver"><span class="choiceText">Diver or snorkeller</span></label>
-          <label class="choice"><input type="radio" name="role" value="diveMaster"><span class="choiceText">Dive master or instructor</span></label>
-          <label class="choice"><input type="radio" name="role" value="fisher"><span class="choiceText">Fisher or angler</span></label>
-          <label class="choice"><input type="radio" name="role" value="other"><span class="choiceText">Other<small>eg boat crew, kayaker, walker on the shore</small></span></label>
+          <label class="choice"><input type="radio" name="role" value="diver"><span class="choiceMark"></span><span class="choiceText">Diver or snorkeller</span></label>
+          <label class="choice"><input type="radio" name="role" value="diveMaster"><span class="choiceMark"></span><span class="choiceText">Dive master or instructor</span></label>
+          <label class="choice"><input type="radio" name="role" value="fisher"><span class="choiceMark"></span><span class="choiceText">Fisher or angler</span></label>
+          <label class="choice"><input type="radio" name="role" value="other"><span class="choiceMark"></span><span class="choiceText">Other<small>eg boat crew, kayaker, walker on the shore</small></span></label>
         </fieldset>
-
         <fieldset data-show-when="role=fisher" hidden>
           <legend>What kind of fishing?</legend>
-          <label class="choice"><input type="radio" name="fisherType" value="recreational"><span class="choiceText">Recreational (angling)</span></label>
-          <label class="choice"><input type="radio" name="fisherType" value="commercial"><span class="choiceText">Commercial</span></label>
+          <label class="choice"><input type="radio" name="fisherType" value="recreational"><span class="choiceMark"></span><span class="choiceText">Recreational (angling)</span></label>
+          <label class="choice"><input type="radio" name="fisherType" value="commercial"><span class="choiceMark"></span><span class="choiceText">Commercial</span></label>
         </fieldset>
-
         <fieldset>
           <legend>How much do you know about sharks?</legend>
-          <label class="choice"><input type="radio" name="experience" value="beginner"><span class="choiceText">Not much<small>I might not know which shark it was</small></span></label>
-          <label class="choice"><input type="radio" name="experience" value="some"><span class="choiceText">Some<small>I have seen sharks before and know a few species</small></span></label>
-          <label class="choice"><input type="radio" name="experience" value="expert"><span class="choiceText">A lot<small>I can identify most UK sharks with confidence</small></span></label>
+          <label class="choice"><input type="radio" name="experience" value="beginner"><span class="choiceMark"></span><span class="choiceText">Not much<small>I might not know which shark it was</small></span></label>
+          <label class="choice"><input type="radio" name="experience" value="some"><span class="choiceMark"></span><span class="choiceText">Some<small>I have seen sharks before and know a few species</small></span></label>
+          <label class="choice"><input type="radio" name="experience" value="expert"><span class="choiceMark"></span><span class="choiceText">A lot<small>I can identify most UK sharks with confidence</small></span></label>
         </fieldset>
-
         <fieldset>
           <legend>Your details (optional)</legend>
           <p class="hint">Only used if a scientist needs to ask about your report. You may report anonymously.</p>
-          <label class="choice"><input type="checkbox" name="anonymous"><span class="choiceText">Report anonymously<small>Your name and email will not be saved with this report</small></span></label>
+          <label class="choice"><input type="checkbox" name="anonymous"><span class="choiceMark"></span><span class="choiceText">Report anonymously<small>Your name and email will not be saved with this report</small></span></label>
           <div class="field">
             <label class="fieldLabel" for="observerName">Name</label>
             <input type="text" id="observerName" name="observerName" autocomplete="name">
@@ -91,69 +85,119 @@
       <section class="step" data-step="photo" data-title="Photos" hidden>
         <h2 tabindex="-1">Photos</h2>
         <p>A photo is the best evidence you can give. It lets an expert confirm the species, even if you are not sure. You may add up to three.</p>
-        <p class="hint">Photos are made smaller and their hidden location data is removed before they are saved.</p>
-        <label class="button buttonBig" for="photoInput">Add a photo</label>
+        <p class="hint">Photos are made smaller, and their hidden location data is removed, before they are saved. The date, time, and position are read from the photo first, to save you typing them.</p>
+        <label class="button buttonBig buttonFull" for="photoInput"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Add a photo</label>
         <input type="file" id="photoInput" accept="image/*" multiple class="visuallyHidden">
         <p id="photoStatus" class="hint" aria-live="polite"></p>
         <div id="photoList" class="photoList"></div>
         <p class="hint">No photo? That is fine. Press Next.</p>
       </section>
 
-      <!-- STEP: Where -->
-      <section class="step" data-step="where" data-title="Where" hidden>
-        <h2 tabindex="-1">Where was it?</h2>
-        <p class="hint">GPS does not work underwater. If you are reporting from the boat or shore, move the pin to where you saw the shark.</p>
+      <!-- STEP: Where and when -->
+      <section class="step" data-step="where" data-title="Where and when" hidden>
+        <h2 tabindex="-1">Where and when?</h2>
+        <p class="stepLead">GPS does not work underwater. Use your position on the boat or shore, then drag the pin to where you saw the shark.</p>
 
-        <div class="buttonRow">
-          <button type="button" class="button" id="gpsButton">Use my current position</button>
-          <button type="button" class="button buttonSecondary" id="photoLocationButton" hidden>Use the location from my photo</button>
+        <div class="whereTop">
+          <div>
+            <div class="buttonRow">
+              <button type="button" class="button buttonFull" id="gpsButton"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5"/></svg>Use my current position</button>
+              <button type="button" class="button buttonSecondary buttonFull" id="photoLocationButton" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Use the location from my photo</button>
+            </div>
+            <p id="gpsStatus" class="hint" aria-live="polite"></p>
+          </div>
+          <div class="positionCard" id="positionCard" hidden>
+            <p class="found"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="positionSource">Position found</span></p>
+            <p class="coords mono" id="positionText"></p>
+            <p class="hint" id="positionAccuracy"></p>
+          </div>
         </div>
-        <p id="gpsStatus" class="hint" aria-live="polite"></p>
 
-        <p id="mapOfflineNote" class="notice" hidden>The map needs an internet connection to show. Your GPS position still works, and you can type the coordinates below.</p>
+        <div id="mapOfflineNote" class="notice" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><p>The map cannot load without a signal. Type the position from your phone, chart plotter, or dive computer.</p></div>
         <div id="locationMap" class="map" role="application" aria-label="Map. Tap to place the pin, or drag it."></div>
 
-        <div class="inlineFields">
-          <div class="field">
-            <label class="fieldLabel" for="latitude">Latitude</label>
-            <input type="number" id="latitude" name="latitude" step="any" inputmode="decimal" placeholder="eg 50.36">
+        <details class="fold" id="typePosition">
+          <summary><span class="foldTitle"><strong>Type the position instead</strong><span>From a chart plotter, dive computer, or phone</span></span></summary>
+          <div class="foldBody">
+            <div class="switcher" role="radiogroup" aria-label="Position format">
+              <label class="segment"><input type="radio" name="coordFormat" value="ddm" checked><span>Degrees and minutes</span></label>
+              <label class="segment"><input type="radio" name="coordFormat" value="decimal"><span>Decimal degrees</span></label>
+            </div>
+            <fieldset>
+              <legend>Latitude</legend>
+              <p class="fieldErrorText" id="latError" hidden></p>
+              <div class="coordRow" data-format="ddm">
+                <label><input type="text" inputmode="decimal" id="latDegrees" class="coordDegrees" aria-label="Latitude degrees" placeholder="50">&deg;</label>
+                <label><input type="text" inputmode="decimal" id="latMinutes" class="coordMinutes" aria-label="Latitude minutes" placeholder="21.6">&prime;</label>
+              </div>
+              <div class="coordRow" data-format="decimal" hidden>
+                <label><input type="text" inputmode="decimal" id="latDecimal" class="coordDecimal" aria-label="Latitude in decimal degrees" placeholder="50.36">&deg;</label>
+              </div>
+              <div class="segments hemisphere" role="radiogroup" aria-label="North or south">
+                <label class="segment"><input type="radio" name="latHemisphere" value="N" checked><span>North</span></label>
+                <label class="segment"><input type="radio" name="latHemisphere" value="S"><span>South</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Longitude</legend>
+              <p class="fieldErrorText" id="lonError" hidden></p>
+              <div class="coordRow" data-format="ddm">
+                <label><input type="text" inputmode="decimal" id="lonDegrees" class="coordDegrees" aria-label="Longitude degrees" placeholder="4">&deg;</label>
+                <label><input type="text" inputmode="decimal" id="lonMinutes" class="coordMinutes" aria-label="Longitude minutes" placeholder="08.4">&prime;</label>
+              </div>
+              <div class="coordRow" data-format="decimal" hidden>
+                <label><input type="text" inputmode="decimal" id="lonDecimal" class="coordDecimal" aria-label="Longitude in decimal degrees" placeholder="4.14">&deg;</label>
+              </div>
+              <div class="segments hemisphere" role="radiogroup" aria-label="West or east">
+                <label class="segment"><input type="radio" name="lonHemisphere" value="W" checked><span>West</span></label>
+                <label class="segment"><input type="radio" name="lonHemisphere" value="E"><span>East</span></label>
+              </div>
+            </fieldset>
+            <p class="hint">Most of the UK and Ireland is west of Greenwich, so West is usually right.</p>
           </div>
-          <div class="field">
-            <label class="fieldLabel" for="longitude">Longitude</label>
-            <input type="number" id="longitude" name="longitude" step="any" inputmode="decimal" placeholder="eg -4.14">
+        </details>
+        <!-- The position actually saved, in decimal degrees. Everything above fills these in. -->
+        <input type="hidden" id="latitude" name="latitude">
+        <input type="hidden" id="longitude" name="longitude">
+        <div id="boundsWarning" class="notice noticeWarning" role="status" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg><p><strong>Check this position.</strong> It is outside UK and Irish waters. If it is right, you can carry on.</p></div>
+
+        <div class="whereBottom">
+          <fieldset>
+            <legend>How close is the pin to the shark?</legend>
+            <div id="precisionChoices"></div>
+          </fieldset>
+          <div>
+            <div class="field">
+              <label class="fieldLabel" for="locality">Dive site or place name (optional)</label>
+              <input type="text" id="locality" name="locality" placeholder="eg Hand Deeps">
+            </div>
+            <h3>When was it?</h3>
+            <div class="whenLine">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              <div><strong id="whenText"></strong><span id="whenSource"></span></div>
+              <button type="button" class="textButton" id="whenChange" aria-controls="whenEdit" aria-expanded="false">Change<span class="visuallyHidden"> the date and time</span></button>
+            </div>
+            <div class="field" id="whenEdit" hidden>
+              <label class="fieldLabel" for="eventDate">Date and time</label>
+              <input type="datetime-local" id="eventDate" name="eventDate">
+              <p id="eventDateHint" class="hint"></p>
+            </div>
           </div>
-        </div>
-        <p class="hint">West of Greenwich, longitude is negative.</p>
-        <p id="boundsWarning" class="notice" hidden>This point is outside UK and Irish waters. Please check it is right. If it is, you can carry on.</p>
-
-        <fieldset>
-          <legend>How accurate is this location?</legend>
-          <div id="precisionChoices"></div>
-        </fieldset>
-      </section>
-
-      <!-- STEP: When -->
-      <section class="step" data-step="when" data-title="When" hidden>
-        <h2 tabindex="-1">When was it?</h2>
-        <div class="field">
-          <label class="fieldLabel" for="eventDate">Date and time</label>
-          <input type="datetime-local" id="eventDate" name="eventDate">
-          <p id="eventDateHint" class="hint"></p>
         </div>
       </section>
 
       <!-- STEP: What -->
       <section class="step" data-step="what" data-title="What" hidden>
         <h2 tabindex="-1">What did you see?</h2>
-        <p class="hint">If you are not sure, choose "Not sure". A wrong guess is harder for scientists to deal with than an honest "not sure".</p>
+        <p class="stepLead">An honest &ldquo;not sure&rdquo; is more useful to scientists than a wrong guess.</p>
         <div id="speciesPicker"><p>Loading species list...</p></div>
-        <div id="speciesDetail" class="speciesDetail" hidden aria-live="polite"></div>
-
-        <fieldset id="confidenceField" hidden>
+        <fieldset id="confidenceField" class="confidenceField" hidden>
           <legend>How sure are you?</legend>
-          <label class="choice"><input type="radio" name="confidence" value="guess"><span class="choiceText">It is a guess</span></label>
-          <label class="choice"><input type="radio" name="confidence" value="fairlySure"><span class="choiceText">Fairly sure</span></label>
-          <label class="choice"><input type="radio" name="confidence" value="certain"><span class="choiceText">Certain</span></label>
+          <div class="segments stackWhenNarrow">
+            <label class="segment"><input type="radio" name="confidence" value="guess"><span>A guess</span></label>
+            <label class="segment"><input type="radio" name="confidence" value="fairlySure"><span>Fairly sure</span></label>
+            <label class="segment"><input type="radio" name="confidence" value="certain"><span>Certain</span></label>
+          </div>
         </fieldset>
       </section>
 
@@ -164,19 +208,16 @@
           <label class="fieldLabel" for="individualCount">Number of sharks</label>
           <input type="number" id="individualCount" name="individualCount" min="1" step="1" inputmode="numeric" value="1">
         </div>
-        <label class="choice"><input type="checkbox" name="countIsEstimate"><span class="choiceText">This number is an estimate</span></label>
-
+        <label class="choice"><input type="checkbox" name="countIsEstimate"><span class="choiceMark"></span><span class="choiceText">This number is an estimate</span></label>
         <fieldset>
           <legend>How did you encounter it?</legend>
-          <label class="choice"><input type="radio" name="encounterType" value="seenUnderwater"><span class="choiceText">Seen underwater</span></label>
-          <label class="choice"><input type="radio" name="encounterType" value="seenFromSurface"><span class="choiceText">Seen from the surface, a boat, or the shore</span></label>
-          <label class="choice"><input type="radio" name="encounterType" value="caughtReleased"><span class="choiceText">Caught and released alive</span></label>
-          <label class="choice"><input type="radio" name="encounterType" value="bycatch"><span class="choiceText">Caught and kept, or died in the catch</span></label>
-          <label class="choice"><input type="radio" name="encounterType" value="strandedDead"><span class="choiceText">Found stranded or dead</span></label>
+          <label class="choice"><input type="radio" name="encounterType" value="seenUnderwater"><span class="choiceMark"></span><span class="choiceText">Seen underwater</span></label>
+          <label class="choice"><input type="radio" name="encounterType" value="seenFromSurface"><span class="choiceMark"></span><span class="choiceText">Seen from the surface, a boat, or the shore</span></label>
+          <label class="choice"><input type="radio" name="encounterType" value="caughtReleased"><span class="choiceMark"></span><span class="choiceText">Caught and released alive</span></label>
+          <label class="choice"><input type="radio" name="encounterType" value="bycatch"><span class="choiceMark"></span><span class="choiceText">Caught and kept, or died in the catch</span></label>
+          <label class="choice"><input type="radio" name="encounterType" value="strandedDead"><span class="choiceMark"></span><span class="choiceText">Found stranded or dead</span></label>
         </fieldset>
-
-        <p class="notice" data-show-when="role=fisher" hidden>Records of sharks caught by accident are very valuable to scientists. You may report anonymously (see the first step).</p>
-
+        <div class="notice" data-show-when="role=fisher" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><p>Records of sharks caught by accident are very valuable to scientists. You may report anonymously: choose Change beside &ldquo;Reporting as&rdquo; on the last screen.</p></div>
         <div class="field" data-show-when="encounterType=caughtReleased,bycatch" hidden>
           <label class="fieldLabel" for="gearType">Fishing method</label>
           <select id="gearType" name="gearType">
@@ -191,103 +232,127 @@
         </div>
       </section>
 
-      <!-- STEP: More detail -->
-      <section class="step" data-step="detail" data-title="More detail" hidden>
-        <h2 tabindex="-1">More detail (optional)</h2>
-        <p class="hint">Answer what you can and skip the rest.</p>
+      <!-- STEP: Extras. Optional for a sighting. For a "no sharks" report only
+           the dive or trip part is shown, and the time spent looking is required. -->
+      <section class="step" data-step="extras" data-title="Extras" hidden>
+        <h2 tabindex="-1" id="extrasHeading">Anything more to add?</h2>
+        <p id="extrasLead">Everything here is <strong>optional</strong>. Add what you can, or skip straight to checking your report.</p>
+        <button type="button" class="button buttonSecondary buttonFull" id="skipButton">Skip to check and save<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></button>
 
-        <fieldset>
-          <legend>Roughly how long was it?</legend>
-          <p class="hint">A diver in fins is about 2m long.</p>
-          <label class="choice"><input type="radio" name="lengthBand" value="under1m"><span class="choiceText">Under 1m</span></label>
-          <label class="choice"><input type="radio" name="lengthBand" value="1to2m"><span class="choiceText">1m to 2m</span></label>
-          <label class="choice"><input type="radio" name="lengthBand" value="2to4m"><span class="choiceText">2m to 4m</span></label>
-          <label class="choice"><input type="radio" name="lengthBand" value="over4m"><span class="choiceText">Over 4m</span></label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Male or female?</legend>
-          <p class="hint">Males have two claspers (finger-like organs) beside the pelvic fins, underneath the body.</p>
-          <label class="choice"><input type="radio" name="sex" value="unknown"><span class="choiceText">Do not know</span></label>
-          <label class="choice"><input type="radio" name="sex" value="male"><span class="choiceText">Male (claspers seen)</span></label>
-          <label class="choice"><input type="radio" name="sex" value="female"><span class="choiceText">Female (no claspers)</span></label>
-        </fieldset>
-
-        <fieldset>
-          <legend>What was it doing? (choose any)</legend>
-          <label class="choice"><input type="checkbox" name="behaviour" value="swimming"><span class="choiceText">Swimming past</span></label>
-          <label class="choice"><input type="checkbox" name="behaviour" value="restingOnSeabed"><span class="choiceText">Resting on the seabed</span></label>
-          <label class="choice"><input type="checkbox" name="behaviour" value="feedingAtSurface"><span class="choiceText">Feeding at the surface</span></label>
-          <label class="choice"><input type="checkbox" name="behaviour" value="breaching"><span class="choiceText">Leaping out of the water</span></label>
-          <label class="choice"><input type="checkbox" name="behaviour" value="approachedPeople"><span class="choiceText">Came close to divers or the boat</span></label>
-          <label class="choice"><input type="checkbox" name="behaviour" value="courtship"><span class="choiceText">Possible courtship (following or biting another shark)</span></label>
-        </fieldset>
-
-        <div class="inlineFields">
-          <div class="field">
-            <label class="fieldLabel" for="depthMetres">Depth of shark (m)</label>
-            <input type="number" id="depthMetres" name="depthMetres" min="0" step="any" inputmode="decimal">
+        <details class="fold" id="effortFold" open>
+          <summary><span class="foldTitle"><span class="badge badgeUseful" id="effortBadge">Most useful</span><strong>Your dive or trip</strong><span>How long you looked, and how deep</span></span></summary>
+          <div class="foldBody">
+            <p class="hint">If we only record sightings, the data shows where people dive, not where sharks live. Knowing how long you looked lets scientists compare places fairly.</p>
+            <fieldset>
+              <legend>How long were you looking?</legend>
+              <div class="segments" id="durationPresets">
+                <label class="segment"><input type="radio" name="durationPreset" value="15"><span>15 min</span></label>
+                <label class="segment"><input type="radio" name="durationPreset" value="30"><span>30 min</span></label>
+                <label class="segment"><input type="radio" name="durationPreset" value="45"><span>45 min</span></label>
+                <label class="segment"><input type="radio" name="durationPreset" value="60"><span>1 hour</span></label>
+                <label class="segment"><input type="radio" name="durationPreset" value="120"><span>2 hours</span></label>
+                <label class="segment"><input type="radio" name="durationPreset" value="other"><span>Other</span></label>
+              </div>
+            </fieldset>
+            <div class="field">
+              <label class="fieldLabel" for="durationMinutes">Minutes spent looking</label>
+              <input type="number" id="durationMinutes" name="durationMinutes" min="1" step="1" inputmode="numeric">
+            </div>
+            <div class="inlineFields">
+              <div class="field">
+                <label class="fieldLabel" for="minDepthMetres">Shallowest (m)</label>
+                <input type="number" id="minDepthMetres" name="minDepthMetres" min="0" step="any" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label class="fieldLabel" for="maxDepthMetres">Deepest (m)</label>
+                <input type="number" id="maxDepthMetres" name="maxDepthMetres" min="0" step="any" inputmode="decimal">
+              </div>
+            </div>
           </div>
-          <div class="field">
-            <label class="fieldLabel" for="waterTempCelsius">Water temperature (&deg;C)</label>
-            <input type="number" id="waterTempCelsius" name="waterTempCelsius" step="any" inputmode="decimal">
+        </details>
+
+        <details class="fold" id="sharkFold" data-sighting-only>
+          <summary><span class="foldTitle"><strong>The shark</strong><span>Length, male or female, what it was doing</span></span></summary>
+          <div class="foldBody">
+            <fieldset>
+              <legend>Roughly how long was it?</legend>
+              <p class="hint">A diver in fins is about 2m long.</p>
+              <label class="choice"><input type="radio" name="lengthBand" value="under1m"><span class="choiceMark"></span><span class="choiceText">Under 1m</span></label>
+              <label class="choice"><input type="radio" name="lengthBand" value="1to2m"><span class="choiceMark"></span><span class="choiceText">1m to 2m</span></label>
+              <label class="choice"><input type="radio" name="lengthBand" value="2to4m"><span class="choiceMark"></span><span class="choiceText">2m to 4m</span></label>
+              <label class="choice"><input type="radio" name="lengthBand" value="over4m"><span class="choiceMark"></span><span class="choiceText">Over 4m</span></label>
+            </fieldset>
+            <fieldset>
+              <legend>Male or female?</legend>
+              <p class="hint">Males have two claspers (finger-like organs) beside the pelvic fins, underneath the body.</p>
+              <label class="choice"><input type="radio" name="sex" value="unknown"><span class="choiceMark"></span><span class="choiceText">Do not know</span></label>
+              <label class="choice"><input type="radio" name="sex" value="male"><span class="choiceMark"></span><span class="choiceText">Male (claspers seen)</span></label>
+              <label class="choice"><input type="radio" name="sex" value="female"><span class="choiceMark"></span><span class="choiceText">Female (no claspers)</span></label>
+            </fieldset>
+            <fieldset>
+              <legend>What was it doing? (choose any)</legend>
+              <label class="choice"><input type="checkbox" name="behaviour" value="swimming"><span class="choiceMark"></span><span class="choiceText">Swimming past</span></label>
+              <label class="choice"><input type="checkbox" name="behaviour" value="restingOnSeabed"><span class="choiceMark"></span><span class="choiceText">Resting on the seabed</span></label>
+              <label class="choice"><input type="checkbox" name="behaviour" value="feedingAtSurface"><span class="choiceMark"></span><span class="choiceText">Feeding at the surface</span></label>
+              <label class="choice"><input type="checkbox" name="behaviour" value="breaching"><span class="choiceMark"></span><span class="choiceText">Leaping out of the water</span></label>
+              <label class="choice"><input type="checkbox" name="behaviour" value="approachedPeople"><span class="choiceMark"></span><span class="choiceText">Came close to divers or the boat</span></label>
+              <label class="choice"><input type="checkbox" name="behaviour" value="courtship"><span class="choiceMark"></span><span class="choiceText">Possible courtship (following or biting another shark)</span></label>
+            </fieldset>
+            <div class="inlineFields">
+              <div class="field">
+                <label class="fieldLabel" for="depthMetres">Depth of shark (m)</label>
+                <input type="number" id="depthMetres" name="depthMetres" min="0" step="any" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label class="fieldLabel" for="waterTempCelsius">Water temperature (&deg;C)</label>
+                <input type="number" id="waterTempCelsius" name="waterTempCelsius" step="any" inputmode="decimal">
+              </div>
+            </div>
           </div>
-        </div>
+        </details>
 
-        <div class="field">
-          <label class="fieldLabel" for="tagsSeen">Did it have a tag? If so, describe it</label>
-          <input type="text" id="tagsSeen" name="tagsSeen" placeholder="eg yellow tag near dorsal fin, number 1234">
-        </div>
-
-        <div class="field">
-          <label class="fieldLabel" for="notes">Anything else?</label>
-          <textarea id="notes" name="notes"></textarea>
-        </div>
+        <details class="fold" id="notesFold" data-sighting-only>
+          <summary><span class="foldTitle"><strong>Tags and notes</strong><span>A tag you saw, or anything else</span></span></summary>
+          <div class="foldBody">
+            <div class="field">
+              <label class="fieldLabel" for="tagsSeen">Did it have a tag? If so, describe it</label>
+              <input type="text" id="tagsSeen" name="tagsSeen" placeholder="eg yellow tag near dorsal fin, number 1234">
+            </div>
+            <div class="field">
+              <label class="fieldLabel" for="notes">Anything else?</label>
+              <textarea id="notes" name="notes"></textarea>
+            </div>
+          </div>
+        </details>
       </section>
 
-      <!-- STEP: Effort -->
-      <section class="step" data-step="effort" data-title="Your dive or trip" hidden>
-        <h2 tabindex="-1" data-heading-sighting="Your dive or trip (optional)" data-heading-absence="Your dive or trip">Your dive or trip</h2>
-        <p class="hint">If we only record sightings, the data shows where people dive, not where sharks live. Telling us how long you looked lets scientists compare places fairly.</p>
-        <div class="field">
-          <label class="fieldLabel" for="durationMinutes">How long were you looking? (minutes)</label>
-          <input type="number" id="durationMinutes" name="durationMinutes" min="1" step="1" inputmode="numeric">
-        </div>
-        <div class="inlineFields">
-          <div class="field">
-            <label class="fieldLabel" for="minDepthMetres">Shallowest depth (m)</label>
-            <input type="number" id="minDepthMetres" name="minDepthMetres" min="0" step="any" inputmode="decimal">
-          </div>
-          <div class="field">
-            <label class="fieldLabel" for="maxDepthMetres">Deepest depth (m)</label>
-            <input type="number" id="maxDepthMetres" name="maxDepthMetres" min="0" step="any" inputmode="decimal">
-          </div>
-        </div>
-      </section>
-
-      <!-- STEP: Review -->
-      <section class="step" data-step="review" data-title="Check and save" hidden>
+      <!-- STEP: Check and save -->
+      <section class="step" data-step="review" data-title="Check" hidden>
         <h2 tabindex="-1">Check your report</h2>
-        <div id="reviewSummary" class="card"></div>
-        <p class="hint">Your report will be saved on this device. The upload service is not running yet, so reports stay on this device for now.</p>
+        <div id="reviewSummary"></div>
+        <div class="notice"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg><p>Your report is saved on this phone first. The upload service is not running yet, so reports stay on this phone for now.</p></div>
       </section>
 
       <nav class="stepNav" aria-label="Report steps">
         <button type="button" class="button buttonSecondary" id="backButton">Back</button>
         <button type="button" class="button" id="nextButton">Next</button>
-        <button type="submit" class="button" id="submitButton" hidden>Save report</button>
+        <button type="submit" class="button" id="submitButton" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Save report</button>
       </nav>
     </form>
 
     <!-- Shown after saving. -->
     <section id="donePanel" hidden>
-      <div class="success" role="status">
-        <h2 tabindex="-1" id="doneHeading">Thank you. Your report has been saved.</h2>
-        <p>It is stored on this device. Reports waiting to be uploaded: <strong data-pending-count>0</strong>.</p>
+      <div class="notice noticeSuccess" role="status">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        <div>
+          <h1 tabindex="-1" id="doneHeading">Thank you. Your report has been saved.</h1>
+          <p>It is stored on this phone. Reports waiting to be uploaded: <strong data-pending-count>0</strong>.</p>
+        </div>
       </div>
       <div class="buttonRow">
         <a class="button" href="report.html">Report another sighting</a>
         <a class="button buttonSecondary" href="sightings.html">See my reports</a>
+        <a class="button buttonSecondary" href="index.html">Home</a>
       </div>
     </section>
   </main>

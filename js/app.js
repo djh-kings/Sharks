@@ -25,6 +25,12 @@ export async function updatePendingCount() {
   for (const element of document.querySelectorAll("[data-pending-count]")) {
     element.textContent = numberInWords(pending);
   }
+  for (const element of document.querySelectorAll("[data-pending-noun]")) {
+    element.textContent = pending === 1 ? "report" : "reports";
+  }
+  for (const element of document.querySelectorAll("[data-pending-verb]")) {
+    element.textContent = pending === 1 ? "is" : "are";
+  }
   for (const element of document.querySelectorAll("[data-pending-visible]")) {
     element.hidden = pending === 0;
   }

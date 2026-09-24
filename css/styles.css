@@ -1,50 +1,98 @@
 /* styles.css
-   Mobile first: the main user is on a phone, on a boat, possibly in bright sun
-   with wet hands. So: large text, large touch targets (at least 48px), strong
-   contrast, and one column. Wider screens get a little more room, nothing more. */
+   The main user is on a phone, on a boat, possibly in bright sun with wet
+   hands. So: large text, large touch targets (at least 48px), strong contrast,
+   and one column. Tablets and computers get more columns where that helps
+   (the species picker, the location map, My reports), never smaller text.
+
+   Sizes are in rem so the browser's text-size setting still works.
+   1rem = 16px at the default setting, so body text (1.125rem) is 18px.
+
+   Layout by screen width (see the design canvas):
+     under 22.5rem (360px)   small or zoomed phones: stage names hidden
+     up to 47.99rem (767px)  phones: one column, 16px side margin
+     48rem (768px) and over  tablets: 32px margin, two-column grids
+     68.75rem (1100px) and over  computers: side-by-side panels, 1200px wide */
+
+/* ---- Colour tokens ---- */
 
 :root {
-  --bg: #f4f7f9;
+  --bg: #f2f0e9;
   --surface: #ffffff;
-  --text: #102a3a;
-  --text-muted: #4a6272;
-  --border: #b9c8d2;
+  --surface-sunk: #e6e3d9;
+  --text: #0a1f2c;
+  --text-muted: #324857;
+  --border: #5e7280;
+  --hairline: #c9cfcf;
   --primary: #0b4f6c;
-  --primary-text: #ffffff;
-  --primary-hover: #083a50;
-  --focus: #f0a202;
-  --selected-bg: #e3f1f7;
-  --error: #b00020;
-  --error-bg: #fdecee;
-  --warning-bg: #fff4d6;
-  --warning-text: #5c4300;
-  --success-bg: #e5f5ea;
-  --success-text: #1b5e32;
-  --radius: 10px;
-  --tap: 48px;
-  font-size: 18px;
+  --primary-strong: #083a50;
+  --on-primary: #ffffff;
+  --selected-bg: #ddebf1;
+  --focus: #b34700;
+  --error: #a3151b;
+  --error-bg: #fbe8e8;
+  --warning-text: #4f3a00;
+  --warning-bg: #fff0c2;
+  --success-text: #17532c;
+  --success-bg: #e1f2e6;
+  --header-bg: #0b4f6c;
+  --header-text: #ffffff;
+  --header-mark: #ffffff;
+  --contour-opacity: 0.16;
+  --map-sea: #ddebf1;
+  --map-land: #d9d3c0;
+
+  --tap-min: 48px;
+  --tap-control: 56px;
+  --tap-row: 64px;
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --gutter: 1rem;
+
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0d1b24;
-    --surface: #15293a;
-    --text: #e8f1f6;
-    --text-muted: #a9bfcc;
-    --border: #3a5566;
+    --bg: #06131b;
+    --surface: #0f2230;
+    --surface-sunk: #0a1a24;
+    --text: #eef4f7;
+    --text-muted: #b7c8d2;
+    --border: #7c95a3;
+    --hairline: #29404e;
     --primary: #5bc0eb;
-    --primary-text: #07202d;
-    --primary-hover: #8fd6f3;
-    --selected-bg: #1f3d52;
-    --error: #ff8a9a;
-    --error-bg: #3a1a20;
-    --warning-bg: #3a3014;
-    --warning-text: #ffe39a;
-    --success-bg: #173222;
-    --success-text: #9be3b2;
+    --primary-strong: #8fd6f3;
+    --on-primary: #03202c;
+    --selected-bg: #133c51;
+    --focus: #ffb24d;
+    --error: #ff9da3;
+    --error-bg: #3a1418;
+    --warning-text: #ffe08a;
+    --warning-bg: #33290b;
+    --success-text: #9ee3b4;
+    --success-bg: #11301e;
+    --header-bg: #0a1a24;
+    --header-text: #eef4f7;
+    --header-mark: #5bc0eb;
+    --contour-opacity: 0.22;
+    --map-sea: #0f2a3a;
+    --map-land: #1e3140;
   }
 }
+
+@media (min-width: 48rem) {
+  :root {
+    --gutter: 2rem;
+  }
+}
+
+@media (min-width: 68.75rem) {
+  :root {
+    --gutter: 2.5rem;
+  }
+}
+
+/* ---- Basics ---- */
 
 * {
   box-sizing: border-box;
@@ -56,29 +104,109 @@
   display: none !important;
 }
 
+html {
+  font-size: 100%;
+}
+
 body {
   margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.5;
+  font-size: 1.125rem;
+  line-height: 1.55;
 }
 
 a {
   color: var(--primary);
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--primary-strong);
 }
 
 :focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
 }
 
-/* ---- Header and navigation ---- */
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+h1 {
+  font-size: 1.875rem;
+  margin: 0 0 1rem;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 1.375rem;
+  margin: 0 0 0.75rem;
+}
+
+h3 {
+  font-size: 1.125rem;
+  margin: 0 0 0.5rem;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hint {
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.small {
+  font-size: 1rem;
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Visually hidden but still read by screen readers. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- Page frame ---- */
 
 .siteHeader {
-  background: var(--primary);
-  color: var(--primary-text);
-  padding: 0.5rem 1rem;
+  background: var(--header-bg);
+  color: var(--header-text);
+  padding: 0.25rem calc(var(--gutter) - 0.5rem) 0.25rem var(--gutter);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 0.5rem;
+  border-bottom: 1px solid var(--hairline);
 }
 
 .siteHeader a {
@@ -86,82 +214,222 @@ a {
 }
 
 .siteTitle {
-  font-weight: 700;
-  font-size: 1.1rem;
-  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: var(--tap);
+  min-height: var(--tap-min);
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.siteTitle .icon {
+  color: var(--header-mark);
+  width: 1.625rem;
+  height: 1.625rem;
+  stroke-width: 2.4;
 }
 
 .siteNav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 1rem;
 }
 
 .siteNav a {
   display: inline-flex;
   align-items: center;
-  min-height: var(--tap);
+  min-height: var(--tap-min);
+  padding: 0 0.625rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .siteNav a[aria-current="page"] {
-  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+}
+
+/* On phones the Report link is dropped: the home page and every screen
+   already lead there, and the header must fit on one line. */
+.navWide {
+  display: none !important;
+}
+
+@media (min-width: 48rem) {
+  .navWide {
+    display: inline-flex !important;
+  }
+}
+
+.siteHeader:has(.reportTitle) {
+  flex-wrap: nowrap;
+}
+
+.headerButton {
+  flex-shrink: 0;
+  min-height: var(--tap-min);
+  padding: 0 0.5rem;
+  background: transparent;
+  border: 0;
+  color: var(--header-text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
 }
 
 .banner {
-  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem var(--gutter);
   background: var(--warning-bg);
   color: var(--warning-text);
-  font-weight: 600;
+  border-bottom: 2px solid var(--warning-text);
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 main {
-  max-width: 44rem;
+  width: 100%;
+  max-width: calc(45rem + 2 * var(--gutter));
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem var(--gutter) 2rem;
+  flex-grow: 1;
 }
 
-h1 {
-  font-size: 1.6rem;
-  line-height: 1.2;
+main.mainWide {
+  max-width: calc(75rem + 2 * var(--gutter));
 }
 
-h2 {
-  font-size: 1.35rem;
-  line-height: 1.25;
-}
-
-.hint {
+.siteFooter {
+  border-top: 1px solid var(--hairline);
   color: var(--text-muted);
-  font-size: 0.9rem;
-  margin: 0.25rem 0 0.75rem;
+  font-size: 1rem;
+  padding: 1.25rem var(--gutter) 1.75rem;
 }
+
+.siteFooter p {
+  max-width: 75rem;
+  margin: 0 auto 0.25rem;
+}
+
+/* ---- Cards, notices, and errors ---- */
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin: 1rem 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 1.25rem;
+  margin: 0 0 1rem;
 }
 
+.card > :last-child {
+  margin-bottom: 0;
+}
+
+/* Notices always carry an icon and a bold title, so they never rely on colour. */
 .notice {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+  margin: 0 0 1rem;
+  border-radius: 12px;
+  border: 2px solid currentColor;
+  background: var(--selected-bg);
+  color: var(--text);
+}
+
+.notice .icon {
+  width: 1.625rem;
+  height: 1.625rem;
+  margin-top: 0.1rem;
+}
+
+.notice p {
+  margin: 0;
+}
+
+.noticeWarning {
   background: var(--warning-bg);
   color: var(--warning-text);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  margin: 1rem 0;
 }
 
-.success {
+.noticeSuccess {
   background: var(--success-bg);
   color: var(--success-text);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  margin: 1rem 0;
+}
+
+.errorSummary {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 3px solid var(--error);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.errorSummary:focus {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.errorSummary ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.fieldErrorText {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  color: var(--error);
+  font-weight: 700;
+  margin: 0 0 0.375rem;
+}
+
+.fieldError {
+  border-color: var(--error) !important;
+  border-width: 3px !important;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge .icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke-width: 2.8;
+}
+
+.badgeWaiting {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.badgeDone {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.badgeUseful {
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-size: 0.9375rem;
 }
 
 /* ---- Buttons ---- */
@@ -170,25 +438,35 @@ h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--tap);
+  gap: 0.625rem;
+  min-height: var(--tap-control);
   padding: 0.5rem 1.25rem;
-  border-radius: var(--radius);
+  border-radius: 12px;
   border: 2px solid var(--primary);
   background: var(--primary);
-  color: var(--primary-text);
+  color: var(--on-primary);
   font: inherit;
-  font-weight: 600;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
 }
 
 .button:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+  color: var(--on-primary);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .buttonSecondary {
-  background: transparent;
+  background: var(--surface);
   color: var(--primary);
 }
 
@@ -197,32 +475,58 @@ h2 {
   color: var(--primary);
 }
 
+.buttonLink {
+  background: transparent;
+  border-color: transparent;
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.buttonLink:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--primary-strong);
+}
+
 .buttonBig {
+  min-height: var(--tap-row);
+  font-size: 1.3125rem;
+}
+
+.buttonFull {
   width: 100%;
-  font-size: 1.2rem;
-  min-height: 64px;
-  margin: 0.5rem 0;
 }
 
 .buttonRow {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  margin: 0 0 1rem;
 }
 
-/* ---- Forms ---- */
+/* ---- Form fields ---- */
 
 fieldset {
   border: none;
   padding: 0;
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.5rem;
+  min-width: 0;
 }
 
 legend,
 .fieldLabel {
+  display: block;
   font-weight: 700;
-  margin-bottom: 0.25rem;
   padding: 0;
+  margin-bottom: 0.375rem;
+}
+
+fieldset > legend {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 0.625rem;
 }
 
 .field {
@@ -237,125 +541,661 @@ select,
 textarea {
   display: block;
   width: 100%;
-  min-height: var(--tap);
-  padding: 0.5rem 0.75rem;
+  min-height: var(--tap-control);
+  padding: 0.5rem 0.875rem;
   font: inherit;
+  font-size: 1.25rem;
   color: var(--text);
   background: var(--surface);
   border: 2px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
 }
 
 textarea {
-  min-height: 6rem;
+  min-height: 7rem;
 }
 
-/* Large tappable radio and checkbox rows. */
-.choice {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: var(--tap);
-  padding: 0.5rem 0.75rem;
-  margin: 0.4rem 0;
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.choice input {
-  width: 1.4rem;
-  height: 1.4rem;
-  flex-shrink: 0;
-  accent-color: var(--primary);
-}
-
-.choice:has(input:checked) {
-  border-color: var(--primary);
-  background: var(--selected-bg);
-}
-
-.choiceText small {
-  display: block;
-  color: var(--text-muted);
+input:disabled {
+  opacity: 0.55;
 }
 
 .inlineFields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
-.fieldError {
-  border-color: var(--error) !important;
-}
-
-.errorSummary {
-  background: var(--error-bg);
-  color: var(--error);
-  border-left: 5px solid var(--error);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  margin: 1rem 0;
-}
-
-.errorSummary ul {
-  margin: 0.25rem 0 0;
-  padding-left: 1.25rem;
-}
-
-/* ---- Report steps ---- */
-
-.progress {
+/* Tappable radio and checkbox rows. The real input is kept (for keyboards and
+   screen readers) and a larger mark is drawn beside it. */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: var(--tap-row);
+  padding: 0.875rem 1rem;
+  margin: 0 0 0.625rem;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
   font-weight: 600;
+  position: relative;
+}
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.choiceMark {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.choice input[type="checkbox"] + .choiceMark {
+  border-radius: 6px;
+}
+
+.choice:has(input:checked) {
+  border: 3px solid var(--primary);
+  padding: 0.8125rem 0.9375rem;
+  background: var(--selected-bg);
+  font-weight: 700;
+}
+
+.choice input:checked + .choiceMark {
+  border: 3px solid var(--primary);
+}
+
+.choice input[type="radio"]:checked + .choiceMark::after {
+  content: "";
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.choice input[type="checkbox"]:checked + .choiceMark {
+  background: var(--primary);
+}
+
+.choice input[type="checkbox"]:checked + .choiceMark::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.875rem;
+  margin-top: -0.2rem;
+  border: solid var(--on-primary);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.choice:has(input:focus-visible) {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.choiceText small {
+  display: block;
+  font-size: 1.0625rem;
+  font-weight: 400;
   color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Segmented buttons: a row of radios that look like buttons (how sure,
+   N/S, W/E, durations). A tick appears on the chosen one, so it is not
+   told apart by colour alone. */
+.segments {
+  display: grid;
+  grid-template-columns: repeat(var(--segments, 3), minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.segment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: var(--tap-control);
+  padding: 0.375rem;
+  text-align: center;
+  line-height: 1.2;
+  font-weight: 700;
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.segment input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.segment:has(input:checked) {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.segment:has(input:checked)::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.8rem;
+  margin: -0.2rem 0.25rem 0 0;
+  border: solid currentColor;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.segment:has(input:focus-visible) {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* A two-way switch in a tray, eg "Degrees and minutes" or "Decimal degrees". */
+.switcher {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin: 0 0 1rem;
+  border-radius: 12px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--hairline);
+}
+
+.switcher .segment {
+  background: transparent;
+  border-color: transparent;
+  min-height: 52px;
+}
+
+.switcher .segment:has(input:checked) {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+@media (max-width: 22.49rem) {
+  .segments.stackWhenNarrow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Folding sections (native <details>, so no JavaScript is needed). */
+.fold {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-card);
+  margin: 0 0 1rem;
+  overflow: hidden;
+}
+
+.fold > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 72px;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+}
+
+.fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.fold > summary::after {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: -0.3rem 0.4rem 0 auto;
+  flex-shrink: 0;
+  border: solid var(--primary);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.fold[open] > summary::after {
+  margin-top: 0.3rem;
+  transform: rotate(-135deg);
+}
+
+.foldTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.foldTitle strong {
+  font-size: 1.1875rem;
+}
+
+.foldTitle span {
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.foldTitle .badge {
+  align-self: flex-start;
+}
+
+.foldBody {
+  padding: 1rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.foldBody > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Home page ---- */
+
+.pendingStrip {
+  background: var(--selected-bg);
+  border-bottom: 1px solid var(--hairline);
+  padding: 0.75rem var(--gutter);
+}
+
+.pendingStrip > div {
+  max-width: 75rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pendingStrip .icon {
+  color: var(--primary);
+  width: 1.625rem;
+  height: 1.625rem;
+}
+
+.pendingStrip p {
+  margin: 0;
+  flex-grow: 1;
+  line-height: 1.4;
+}
+
+.pendingStrip a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  font-weight: 700;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 2.25rem var(--gutter) 0.5rem;
+}
+
+/* Depth contour lines, like a sea chart. Decoration only. */
+.hero .contours {
+  position: absolute;
+  inset: 0 0 auto 0;
+  width: 100%;
+  height: 12rem;
+  color: var(--primary);
+  opacity: var(--contour-opacity);
+}
+
+.heroInner {
+  position: relative;
+  max-width: 75rem;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0 0 0.875rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  line-height: 1.07;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.875rem;
+}
+
+.heroInner .card {
+  margin-bottom: 0;
+}
+
+.homeActions {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0 0 1.25rem;
+}
+
+.reassure {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  color: var(--text-muted);
+}
+
+.reassure .icon {
+  margin-top: 0.2rem;
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.whyFigures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.whyFigures figure {
   margin: 0;
 }
 
-.progressBar {
-  height: 8px;
-  background: var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 0.5rem 0 1rem;
-}
-
-.progressBar span {
+.whyFigures svg {
+  width: 100%;
+  height: auto;
   display: block;
-  height: 100%;
-  background: var(--primary);
-  transition: width 0.2s;
+  margin-bottom: 0.375rem;
 }
 
-.step h2:focus {
+.whyFigures figcaption {
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.whyFigures strong {
+  color: var(--text);
+}
+
+.whySea {
+  fill: var(--map-sea);
+  stroke: var(--border);
+}
+
+.whyLand {
+  fill: var(--map-land);
+}
+
+.whySeen {
+  fill: var(--primary);
+}
+
+.whyNone {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2.2;
+}
+
+.infoCards {
+  display: grid;
+  gap: 1rem;
+}
+
+.infoCards .card {
+  margin: 0;
+}
+
+.infoCards .icon {
+  color: var(--primary);
+  width: 1.875rem;
+  height: 1.875rem;
+  margin-bottom: 0.375rem;
+}
+
+.infoCards h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.375rem;
+}
+
+.homeMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.homeMain > * {
+  margin: 0;
+}
+
+@media (min-width: 48rem) {
+  .hero {
+    padding-top: 3rem;
+  }
+
+  .hero h1 {
+    font-size: 3.25rem;
+  }
+
+  .homeActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .infoCards {
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  }
+}
+
+@media (min-width: 68.75rem) {
+  .hero {
+    padding-top: 4rem;
+  }
+
+  .hero .contours {
+    height: 19rem;
+  }
+
+  .heroInner {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .hero h1 {
+    font-size: 3.75rem;
+  }
+
+  .homeActions {
+    grid-template-columns: 1fr;
+    max-width: 29rem;
+  }
+
+  .infoCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ---- Report: header, progress, and step navigation ---- */
+
+.reportTitle {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--tap-min);
+  font-size: 1.125rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.reportTitle .icon {
+  color: var(--header-mark);
+  stroke-width: 2.4;
+}
+
+.progress {
+  margin: 0 0 1.25rem;
+}
+
+.progressText {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 0 0 0.625rem;
+}
+
+.stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.stages li {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+
+.stages li::before {
+  content: "";
+  height: 10px;
+  border-radius: 5px;
+  border: 2px solid var(--border);
+}
+
+.stages li.stageOptional::before {
+  border-style: dashed;
+}
+
+.stages li.stageDone::before,
+.stages li[aria-current="step"]::before {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.stages li[aria-current="step"] {
+  color: var(--text);
+  font-weight: 800;
+}
+
+@media (max-width: 22.49rem) {
+  .stageName {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+.step > h2 {
+  font-size: 1.875rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+}
+
+.step > h2:focus {
   outline: none;
 }
 
+.stepLead {
+  color: var(--text-muted);
+}
+
+.optionalTag {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+/* Back takes one third, Next two thirds. On a phone the bar sticks to the
+   bottom of the screen, except when the screen is short (a phone on its side). */
 .stepNav {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
   gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  margin: 1.5rem calc(-1 * var(--gutter)) -2rem;
+  padding: 0.875rem var(--gutter) 1.125rem;
+  background: var(--surface);
+  border-top: 1px solid var(--hairline);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .stepNav .button {
-  flex: 1;
+  width: 100%;
+}
+
+.stepNav #backButton[hidden] + #nextButton,
+.stepNav #backButton[hidden] ~ #submitButton {
+  grid-column: 1 / -1;
+}
+
+@media (max-height: 37.5rem) {
+  .stepNav {
+    position: static;
+  }
+}
+
+@media (min-width: 48rem) {
+  .stepNav {
+    position: static;
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0 0;
+    padding: 1.25rem 0 0;
+    background: transparent;
+  }
+
+  .stepNav .button {
+    width: auto;
+    min-width: 11rem;
+  }
+
+  .stepNav #nextButton,
+  .stepNav #submitButton {
+    min-width: 17.5rem;
+    margin-left: auto;
+  }
 }
 
 /* ---- Photos ---- */
 
 .photoList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   gap: 0.75rem;
   margin: 1rem 0;
 }
 
 .photoItem {
-  position: relative;
   margin: 0;
 }
 
@@ -363,69 +1203,331 @@ textarea {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
   display: block;
 }
 
 .photoItem button {
   width: 100%;
-  margin-top: 0.25rem;
+  margin-top: 0.375rem;
 }
 
-/* Visually hidden but still usable by keyboard and screen readers. */
-.visuallyHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+/* ---- Where and when ---- */
+
+.positionCard {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 1rem;
+  margin: 0 0 1rem;
 }
 
-/* ---- Map ---- */
+.positionCard .found {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--success-text);
+  font-weight: 800;
+  margin: 0 0 0.25rem;
+}
+
+.positionCard .coords span {
+  display: block;
+}
+
+.positionCard .coords {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0 0 0.25rem;
+}
 
 .map {
-  height: 320px;
-  border-radius: var(--radius);
+  height: 16rem;
+  border-radius: 12px;
   border: 2px solid var(--border);
-  margin: 0.75rem 0;
+  margin: 0 0 1rem;
   z-index: 0;
 }
 
 .mapLarge {
-  height: 420px;
+  height: 22rem;
+}
+
+.coordRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.coordRow label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.coordRow input {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 1.375rem;
+}
+
+.coordDegrees {
+  width: 4.5rem !important;
+}
+
+.coordMinutes {
+  width: 6.5rem !important;
+}
+
+.coordDecimal {
+  width: 10rem !important;
+}
+
+.hemisphere {
+  --segments: 2;
+}
+
+.whenLine {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  margin: 0 0 1rem;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+}
+
+.whenLine .icon {
+  color: var(--primary);
+}
+
+.whenLine > div {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.whenLine strong {
+  line-height: 1.35;
+}
+
+.whenLine span {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.textButton {
+  min-height: var(--tap-min);
+  padding: 0 0.75rem;
+  background: transparent;
+  border: 0;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  margin: 1.5rem 0;
+}
+
+@media (min-width: 48rem) {
+  .whereTop {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .map {
+    height: 22rem;
+  }
+
+  .whereBottom {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+  }
 }
 
 /* ---- Species picker ---- */
 
-.speciesGroup legend {
+.notSureCard {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1.05rem;
+  gap: 1rem;
+  padding: 1.125rem 1rem;
+  margin: 0 0 1.25rem;
+  background: var(--surface);
+  border: 3px solid var(--primary);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  position: relative;
 }
 
-.groupSilhouette {
-  width: 96px;
-  height: auto;
+.notSureCard input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.notSureCard:has(input:checked) {
+  background: var(--selected-bg);
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.notSureCard:has(input:focus-visible) {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.notSureIcon {
+  width: 3.25rem;
+  height: 3.25rem;
   flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--selected-bg);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.speciesGrid {
+.notSureIcon .icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.notSureCard:has(input:checked) .notSureIcon {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.notSureText strong {
+  display: block;
+  font-size: 1.375rem;
+  line-height: 1.25;
+}
+
+.notSureText span {
+  display: block;
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.shapeList {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 0.5rem;
+  gap: 0.625rem;
+}
+
+.shapeButton {
+  width: 100%;
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shapeButton[aria-pressed="true"] {
+  border: 3px solid var(--primary);
+  background: var(--selected-bg);
+}
+
+.shapeImage {
+  width: 6rem;
+  height: 4rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunk);
+  border-radius: 8px;
+}
+
+/* The placeholder silhouettes are mid-grey SVG files; real illustrations or
+   photos can replace them later without changing this layout. */
+.shapeImage img {
+  width: 88%;
+  height: auto;
+}
+
+.shapeText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.shapeText strong {
+  line-height: 1.3;
+}
+
+.shapeText span {
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.shapeButton .chevron {
+  color: var(--primary);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: var(--tap-min);
+  margin: 0 0 0.5rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.groupPanel h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .speciesCard {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-height: var(--tap);
-  padding: 0.6rem 0.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 96px;
+  padding: 0.75rem;
+  margin: 0 0 0.625rem;
   background: var(--surface);
   border: 2px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 12px;
   cursor: pointer;
   position: relative;
 }
@@ -433,102 +1535,525 @@ textarea {
 .speciesCard input {
   position: absolute;
   opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.speciesCard .shapeImage {
+  width: 5.25rem;
+  height: 3.75rem;
 }
 
 .speciesCard:has(input:checked) {
-  border-color: var(--primary);
+  border: 3px solid var(--primary);
+  padding: 0.6875rem;
   background: var(--selected-bg);
-  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.speciesCard input:checked ~ .choiceMark {
+  border: 3px solid var(--primary);
+}
+
+.speciesCard input:checked ~ .choiceMark::after {
+  content: "";
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: var(--primary);
 }
 
 .speciesCard:has(input:focus-visible) {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
 }
 
-.speciesCardNotSure {
-  margin-bottom: 1.25rem;
-  border-style: dashed;
+.speciesCardText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .speciesCardName {
-  font-weight: 700;
-}
-
-.speciesCardSci,
-.speciesCardHint {
-  font-size: 0.85rem;
-  color: var(--text-muted);
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 .speciesCardSci {
+  font-size: 1rem;
   font-style: italic;
+  color: var(--text-muted);
+}
+
+.speciesCardHint {
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--text-muted);
 }
 
 .speciesDetail {
-  position: sticky;
-  bottom: 0;
   background: var(--surface);
-  border: 2px solid var(--primary);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  margin: 1rem 0;
+  border: 3px solid var(--primary);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  margin: 0 0 1.5rem;
 }
 
-.speciesDetail h3 {
-  margin: 0 0 0.25rem;
+.speciesDetailImage {
+  position: relative;
+  height: 10rem;
+  background: var(--surface-sunk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ---- Review and reports list ---- */
+.speciesDetailImage img {
+  width: 16rem;
+  max-width: 80%;
+  height: auto;
+}
 
-.summaryList {
-  display: grid;
-  grid-template-columns: minmax(7rem, auto) 1fr;
-  gap: 0.4rem 1rem;
+.imageNote {
+  position: absolute;
+  left: 0.625rem;
+  bottom: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.speciesDetailBody {
+  padding: 1rem;
+}
+
+.speciesDetailBody h3 {
+  font-size: 1.5rem;
   margin: 0;
 }
 
-.summaryList dt {
-  font-weight: 700;
+.features {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
 }
 
-.summaryList dd {
+.features li {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  margin: 0 0 0.5rem;
+}
+
+.features .icon {
+  color: var(--primary);
+  margin-top: 0.2rem;
+  width: 1.375rem;
+  height: 1.375rem;
+  stroke-width: 3;
+}
+
+.lookalikeBox {
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--radius-control);
+  background: var(--surface-sunk);
+}
+
+.lookalikeBox p {
+  margin: 0 0 0.5rem;
+}
+
+.lookalikeBox .button {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+/* The comparison opens as a native dialog: full screen on a phone. */
+.compareDialog {
+  width: 100%;
+  max-width: 48rem;
+  max-height: 100%;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.compareDialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+@media (min-width: 48rem) {
+  .compareDialog {
+    border-radius: var(--radius-card);
+    max-height: calc(100% - 4rem);
+  }
+}
+
+.compareHeader {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0.5rem var(--gutter);
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.compareHeader h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.compareBody {
+  padding: 1.25rem var(--gutter) 1.75rem;
+}
+
+.compareTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+  table-layout: fixed;
+  margin: 0 0 1rem;
+}
+
+.compareTable th,
+.compareTable td {
+  vertical-align: top;
+  text-align: left;
+  padding: 0.5rem 0.625rem;
+  line-height: 1.4;
+}
+
+.compareTable thead th {
+  font-weight: 800;
+}
+
+.compareTable thead .shapeImage {
+  width: 100%;
+  height: 5.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.compareTable tbody td {
+  background: var(--surface);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.compareTable tbody td:first-child {
+  border-left: 1px solid var(--hairline);
+  border-radius: 10px 0 0 10px;
+}
+
+.compareTable tbody td:last-child {
+  border-left: 2px solid var(--hairline);
+  border-right: 1px solid var(--hairline);
+  border-radius: 0 10px 10px 0;
+}
+
+.compareActions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.picker {
+  margin-bottom: 1.5rem;
+}
+
+.confidenceField .segments {
+  --segments: 3;
+}
+
+/* Which parts of the picker show. On a phone, shapes and species are two
+   views; report.js sets data-view to "shapes", "group:<id>", or "all". */
+.picker[data-view="shapes"] .pickerSpecies,
+.picker[data-view="shapes"] .pickerDetail {
+  display: none;
+}
+
+@media (max-width: 68.74rem) {
+  .picker:not([data-view="shapes"]) .pickerShapes {
+    display: none;
+  }
+}
+
+/* Computers: shapes, species, and details side by side. */
+@media (min-width: 68.75rem) {
+  /* The report is one column, except on the species step, which needs room
+     for three columns. */
+  main:has([data-step="what"]:not([hidden])) {
+    max-width: calc(75rem + 2 * var(--gutter));
+  }
+
+  .picker {
+    display: grid;
+    grid-template-columns: 18.75rem 23.75rem minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .pickerShapes,
+  .pickerSpecies,
+  .pickerDetail {
+    min-width: 0;
+  }
+
+  /* The shape list stays visible, so the "All shapes" link is not needed. */
+  .picker .backLink {
+    display: none;
+  }
+
+  .picker .shapeButton {
+    min-height: 72px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .picker .shapeButton .shapeText span {
+    display: none;
+  }
+
+  .picker .shapeImage {
+    width: 4.5rem;
+    height: 3rem;
+  }
+
+  .picker[data-view="all"] .pickerSpecies {
+    grid-column: 2 / 4;
+  }
+
+  .picker[data-view="all"] .pickerDetail {
+    grid-column: 2 / 4;
+  }
+
+  .picker[data-view="all"] .pickerSpecies .groupPanels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1.5rem;
+  }
+}
+
+/* Tablets: shapes in two columns. */
+@media (min-width: 48rem) and (max-width: 68.74rem) {
+  .shapeList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---- Check and save ---- */
+
+.checkList {
+  margin: 0 0 1.5rem;
+}
+
+.checkRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.checkRow > div {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.checkRow dt {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.checkRow dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.reportCard h3 {
-  margin: 0 0 0.25rem;
+.checkRow dd strong {
+  display: block;
+  line-height: 1.35;
 }
 
-.statusTag {
-  display: inline-block;
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: var(--warning-bg);
-  color: var(--warning-text);
+.checkRow dd span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 1.0625rem;
 }
 
-.guideSpecies h3 {
-  margin-bottom: 0;
+/* ---- My reports ---- */
+
+.pageHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
 }
 
-.guideSpecies .speciesCardSci {
-  margin-top: 0;
+.pageHeading h1 {
+  margin: 0;
 }
 
-.siteFooter {
-  max-width: 44rem;
-  margin: 2rem auto 0;
+.reportsSwitch {
+  margin-bottom: 1rem;
+}
+
+.reportList {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.reportCard {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
   padding: 1rem;
-  font-size: 0.85rem;
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+}
+
+.reportNumber {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.reportBody {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.reportBody h2 {
+  font-size: 1.1875rem;
+  margin: 0;
+}
+
+.reportBody p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.reportBody .when {
+  font-size: 1rem;
   color: var(--text-muted);
 }
 
-@media (min-width: 40rem) {
-  .buttonBig {
-    width: auto;
+.reportBody .photoList {
+  margin: 0.5rem 0 0;
+}
+
+.reportBody .buttonRow {
+  margin: 0.5rem 0 0;
+}
+
+@media (max-width: 47.99rem) {
+  .reportsLayout[data-view="list"] .reportsMapPanel,
+  .reportsLayout[data-view="map"] .reportsListPanel {
+    display: none;
   }
+}
+
+@media (min-width: 48rem) {
+  .reportsSwitch {
+    display: none;
+  }
+
+  .reportList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 68.75rem) {
+  .reportsLayout {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .reportsMapPanel {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .reportsMapPanel .map {
+    height: 35rem;
+  }
+
+  .reportList {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Species guide ---- */
+
+.guideGroup {
+  margin: 0 0 2rem;
+}
+
+.guideGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.guideGroupHead h2 {
+  margin: 0;
+}
+
+.guideGroupHead p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.guideGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.guideSpecies {
+  margin: 0;
+}
+
+.guideSpecies h3 {
+  font-size: 1.3125rem;
+  margin: 0;
+}
+
+.guideSpecies .speciesCardSci {
+  margin: 0 0 0.75rem;
+}
+
+@media (min-width: 48rem) {
+  .guideGrid {
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  }
+}
+
+#skipButton {
+  margin-bottom: 1.25rem;
+}
+
+.positionCard .hint {
+  margin: 0;
 }

@@ -1,10 +1,14 @@
 // report.js
-// Runs the multi-step report form on report.html.
+// Runs the step-by-step report form on report.html.
 //
 // How it works:
 // - Every step is a <section data-step="..."> in report.html. Only one is shown at a time.
-// - stepsByMode lists which steps appear, in order. An "absence" report
-//   ("I looked but saw no sharks") skips the photo, species, and count steps.
+// - Steps are grouped into named STAGES for the progress bar (stagesByMode).
+//   A sighting has five stages: Photo, Where, What, Extras (optional), Check.
+//   A "no sharks" report has three: Where, Your trip, Check.
+// - "About you" is asked before the first report only. After that the answers
+//   are remembered on the phone, and shown (with a Change button) on the
+//   check screen.
 // - Each step has a validator. Next only moves on if it returns no errors.
 // - After every step the whole form is saved as a draft in IndexedDB, so nothing
 //   is lost if the phone locks or the app closes.
@@ -12,16 +16,48 @@
 // To add a question: add the input to report.html, then (if it matters) read it
 // in buildReport() below and add it to the Darwin Core export in exportDwc.js.
 
-import { formatDateTime, formatCoords, toIsoWithOffset, toLocalInputValue, escapeHtml, numberInWords } from "./format.js";
+import {
+  formatDateTime,
+  formatTime,
+  formatPosition,
+  toIsoWithOffset,
+  toLocalInputValue,
+  escapeHtml,
+  numberInWords,
+} from "./format.js";
 import { saveReport, saveDraft, loadDraft, clearDraft, getSetting, setSetting, newId } from "./store.js";
-import { getCurrentPosition, precisionOptions, uncertaintyMetres, validateCoords, isInUkIrelandWaters } from "./geo.js";
+import {
+  getCurrentPosition,
+  precisionOptions,
+  uncertaintyMetres,
+  validateCoords,
+  isInUkIrelandWaters,
+  parseTypedCoordinate,
+  splitCoordinate,
+} from "./geo.js";
 import { readPhotoMetadata, preparePhoto } from "./photos.js";
-import { loadSpeciesData, renderSpeciesPicker, renderSpeciesDetail, findSpecies, notSureId } from "./speciesPicker.js";
+import {
+  loadSpeciesData,
+  renderSpeciesPicker,
+  parseSpeciesChoice,
+  describeSpeciesChoice,
+} from "./speciesPicker.js";
 import { updatePendingCount } from "./app.js";
+import { icon } from "./icons.js";
 
-const stepsByMode = {
-  sighting: ["observer", "photo", "where", "when", "what", "count", "detail", "effort", "review"],
-  absence: ["observer", "where", "when", "effort", "review"],
+const stagesByMode = {
+  sighting: [
+    { name: "Photo", steps: ["photo"] },
+    { name: "Where", steps: ["where"] },
+    { name: "What", steps: ["what", "count"] },
+    { name: "Extras", steps: ["extras"], optional: true },
+    { name: "Check", steps: ["review"] },
+  ],
+  absence: [
+    { name: "Where", steps: ["where"] },
+    { name: "Your trip", steps: ["extras"] },
+    { name: "Check", steps: ["review"] },
+  ],
 };
 
 const maxPhotos = 3;
@@ -29,17 +65,22 @@ const maxPhotos = 3;
 // Values that are not simple form fields live here.
 const state = {
   mode: "sighting",
+  includeObserver: false, // true before the first report, or after "Change" on the check screen
   stepIndex: 0,
+  returnToReview: false, // true after "Change" on the check screen
   photos: [], // { blob, width, height, takenAt }
   photoLocation: null, // { latitude, longitude } from the first photo that had GPS
   gpsAccuracyMetres: null,
+  gpsTime: null,
   locationSource: null, // "gps" | "photo" | "map" | "manual"
-  eventDateEditedByUser: false,
+  eventDateSource: null, // "now" | "photo" | "user"
   speciesData: null,
+  picker: null,
 };
 
 const form = document.getElementById("reportForm");
 const errorSummary = document.getElementById("errorSummary");
+const byId = (id) => document.getElementById(id);
 let map = null;
 let marker = null;
 
@@ -112,11 +153,11 @@ function updateConditionalFields() {
 
   const anonymous = fields.anonymous;
   for (const id of ["observerName", "observerEmail"]) {
-    document.getElementById(id).disabled = anonymous;
+    byId(id).disabled = anonymous;
   }
 
-  const confidenceField = document.getElementById("confidenceField");
-  confidenceField.hidden = !fields.speciesId || fields.speciesId === notSureId;
+  const choice = parseSpeciesChoice(state.speciesData || { species: [] }, fields.speciesId);
+  byId("confidenceField").hidden = !fields.speciesId || choice.isNotSure;
 }
 
 // ---------------------------------------------------------------------------
@@ -143,32 +184,31 @@ const validators = {
 
   where(fields) {
     const errors = [];
-    if (fields.latitude === "" || fields.longitude === "") {
+    const typed = readTypedPosition();
+    if (typed.errors.length > 0) {
+      for (const message of typed.errors) errors.push({ field: "typedPosition", message });
+    } else if (fields.latitude === "" || fields.longitude === "") {
       errors.push({
         field: "latitude",
-        message: "Give a location: use your current position, tap the map, or type the coordinates.",
+        message: "Give a position: use your current position, tap the map, or type it in.",
       });
     } else {
       for (const message of validateCoords(Number(fields.latitude), Number(fields.longitude))) {
         errors.push({ field: "latitude", message });
       }
     }
-    if (!fields.precision) errors.push({ field: "precision", message: "Say how accurate the location is." });
-    return errors;
-  },
+    if (!fields.precision) errors.push({ field: "precision", message: "Say how close the position is to the shark." });
 
-  when(fields) {
-    const errors = [];
     if (!fields.eventDate) {
-      errors.push({ field: "eventDate", message: "Give the date and time of the sighting." });
-      return errors;
-    }
-    const date = new Date(fields.eventDate);
-    const fiveMinutesAhead = Date.now() + 5 * 60 * 1000;
-    if (Number.isNaN(date.getTime())) {
-      errors.push({ field: "eventDate", message: "The date and time are not valid." });
-    } else if (date.getTime() > fiveMinutesAhead) {
-      errors.push({ field: "eventDate", message: "The date and time cannot be in the future." });
+      errors.push({ field: "eventDate", message: "Give the date and time." });
+    } else {
+      const date = new Date(fields.eventDate);
+      const fiveMinutesAhead = Date.now() + 5 * 60 * 1000;
+      if (Number.isNaN(date.getTime())) {
+        errors.push({ field: "eventDate", message: "The date and time are not valid." });
+      } else if (date.getTime() > fiveMinutesAhead) {
+        errors.push({ field: "eventDate", message: "The date and time cannot be in the future." });
+      }
     }
     return errors;
   },
@@ -177,7 +217,7 @@ const validators = {
     const errors = [];
     if (!fields.speciesId) {
       errors.push({ field: "speciesId", message: 'Choose a species, or "Not sure".' });
-    } else if (fields.speciesId !== notSureId && !fields.confidence) {
+    } else if (!parseSpeciesChoice(state.speciesData, fields.speciesId).isNotSure && !fields.confidence) {
       errors.push({ field: "confidence", message: "Say how sure you are of the species." });
     }
     return errors;
@@ -193,28 +233,14 @@ const validators = {
     return errors;
   },
 
-  detail(fields) {
-    const errors = [];
-    if (fields.depthMetres !== "" && numberOrNull(fields.depthMetres) === null) {
-      errors.push({ field: "depthMetres", message: "Depth must be a number." });
-    }
-    if (fields.waterTempCelsius !== "") {
-      const temperature = numberOrNull(fields.waterTempCelsius);
-      if (temperature === null || temperature < -2 || temperature > 35) {
-        errors.push({ field: "waterTempCelsius", message: "Water temperature should be between -2 and 35 degrees." });
-      }
-    }
-    return errors;
-  },
-
-  effort(fields) {
+  extras(fields) {
     const errors = [];
     const duration = numberOrNull(fields.durationMinutes);
-    // For an absence record, the time spent looking is the whole point.
+    // For a "no sharks" record, the time spent looking is the whole point.
     if (state.mode === "absence" && duration === null) {
       errors.push({
         field: "durationMinutes",
-        message: "Say how long you were looking. Without this, a \"no sharks\" record cannot be used.",
+        message: 'Say how long you were looking. Without this, a "no sharks" record cannot be used.',
       });
     }
     if (fields.durationMinutes !== "" && (duration === null || duration < 1)) {
@@ -225,12 +251,29 @@ const validators = {
     if (minDepth !== null && maxDepth !== null && minDepth > maxDepth) {
       errors.push({ field: "maxDepthMetres", message: "The deepest depth must be more than the shallowest." });
     }
+    if (state.mode === "sighting") {
+      if (fields.depthMetres !== "" && numberOrNull(fields.depthMetres) === null) {
+        errors.push({ field: "depthMetres", message: "Depth must be a number." });
+      }
+      if (fields.waterTempCelsius !== "") {
+        const temperature = numberOrNull(fields.waterTempCelsius);
+        if (temperature === null || temperature < -2 || temperature > 35) {
+          errors.push({ field: "waterTempCelsius", message: "Water temperature should be between -2 and 35 degrees." });
+        }
+      }
+    }
     return errors;
   },
 
   review() {
     return [];
   },
+};
+
+// Fields that are not a single named input: where to show the red border.
+const errorTargets = {
+  typedPosition: () => [...form.querySelectorAll("#typePosition input[type='text']")],
+  latitude: () => [byId("gpsButton")],
 };
 
 function showErrors(errors) {
@@ -243,14 +286,35 @@ function showErrors(errors) {
     return;
   }
   const items = errors.map((e) => `<li>${escapeHtml(e.message)}</li>`).join("");
-  errorSummary.innerHTML = `<strong>Please check the following:</strong><ul>${items}</ul>`;
+  errorSummary.innerHTML = `<strong>There is a problem. Please check the following:</strong><ul>${items}</ul>`;
   errorSummary.hidden = false;
   for (const error of errors) {
-    for (const element of form.querySelectorAll(`[name="${error.field}"]`)) {
-      (element.closest(".choice, .speciesCard") || element).classList.add("fieldError");
+    const targets = errorTargets[error.field]?.() || form.querySelectorAll(`[name="${error.field}"]`);
+    for (const element of targets) {
+      (element.closest(".choice, .speciesCard, .notSureCard, .segment") || element).classList.add("fieldError");
+      // Open any folded section, so the problem can be seen.
+      element.closest("details")?.setAttribute("open", "");
+    }
+    if (error.field === "eventDate") {
+      setWhenEditing(true);
     }
   }
   errorSummary.focus();
+}
+
+// Once the user changes an answer, its red border goes. The summary at the
+// top stays until they press Next, so they can still read what was wrong.
+function clearFieldError(event) {
+  const target = event.target;
+  const elements = target.name ? form.querySelectorAll(`[name="${target.name}"]`) : [target];
+  for (const element of elements) {
+    (element.closest(".choice, .speciesCard, .notSureCard, .segment") || element).classList.remove("fieldError");
+  }
+  // Every speciesId radio is one answer, wherever it sits in the picker.
+  if (target.name === "speciesId" || target.closest?.("#typePosition")) {
+    const scope = target.name === "speciesId" ? byId("speciesPicker") : byId("typePosition");
+    for (const element of scope.querySelectorAll(".fieldError")) element.classList.remove("fieldError");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -258,7 +322,28 @@ function showErrors(errors) {
 // ---------------------------------------------------------------------------
 
 function currentSteps() {
-  return stepsByMode[state.mode];
+  const steps = stagesByMode[state.mode].flatMap((stage) => stage.steps);
+  return state.includeObserver ? ["observer", ...steps] : steps;
+}
+
+function renderProgress(stepName) {
+  const stages = stagesByMode[state.mode];
+  const currentIndex = stages.findIndex((stage) => stage.steps.includes(stepName));
+  byId("progressText").textContent =
+    currentIndex === -1
+      ? "Before you start"
+      : `Stage ${numberInWords(currentIndex + 1)} of ${numberInWords(stages.length)}: ${stages[currentIndex].name}`;
+  byId("stageList").innerHTML = stages
+    .map((stage, index) => {
+      const classes = [];
+      if (currentIndex !== -1 && index < currentIndex) classes.push("stageDone");
+      if (stage.optional) classes.push("stageOptional");
+      const current = index === currentIndex ? ' aria-current="step"' : "";
+      const done = classes.includes("stageDone") ? '<span class="visuallyHidden"> (done)</span>' : "";
+      const optional = stage.optional ? '<span class="visuallyHidden"> (optional)</span>' : "";
+      return `<li class="${classes.join(" ")}"${current}><span class="stageName">${stage.name}</span>${done}${optional}</li>`;
+    })
+    .join("");
 }
 
 function showStep(index, { focus = true } = {}) {
@@ -270,15 +355,13 @@ function showStep(index, { focus = true } = {}) {
     section.hidden = section.dataset.step !== stepName;
   }
   const section = form.querySelector(`[data-step="${stepName}"]`);
+  renderProgress(stepName);
 
-  document.getElementById("progressText").textContent =
-    `Step ${numberInWords(state.stepIndex + 1)} of ${numberInWords(steps.length)}: ${section.dataset.title}`;
-  document.getElementById("progressFill").style.width = `${((state.stepIndex + 1) / steps.length) * 100}%`;
-
-  const isLast = state.stepIndex === steps.length - 1;
-  document.getElementById("backButton").hidden = state.stepIndex === 0;
-  document.getElementById("nextButton").hidden = isLast;
-  document.getElementById("submitButton").hidden = !isLast;
+  const isLast = stepName === "review";
+  byId("backButton").hidden = state.stepIndex === 0;
+  byId("nextButton").hidden = isLast;
+  byId("nextButton").textContent = state.returnToReview ? "Back to check" : "Next";
+  byId("submitButton").hidden = !isLast;
   showErrors([]);
 
   stepEnterHooks[stepName]?.();
@@ -288,40 +371,86 @@ function showStep(index, { focus = true } = {}) {
   }
 }
 
+function showStepByName(stepName) {
+  showStep(currentSteps().indexOf(stepName));
+}
+
 const stepEnterHooks = {
   where() {
-    initMap();
-    document.getElementById("mapOfflineNote").hidden = navigator.onLine;
-    document.getElementById("photoLocationButton").hidden = !state.photoLocation;
-  },
-  when() {
-    const input = document.getElementById("eventDate");
+    const online = navigator.onLine;
+    byId("mapOfflineNote").hidden = online;
+    byId("locationMap").hidden = !online;
+    if (!online) {
+      byId("typePosition").open = true;
+    }
+    if (online) {
+      initMap();
+    }
+    byId("photoLocationButton").hidden = !state.photoLocation;
+
+    const input = byId("eventDate");
     input.max = toLocalInputValue(new Date());
     if (!input.value) {
       input.value = toLocalInputValue(new Date());
+      state.eventDateSource = "now";
     }
-    updateEventDateHint();
+    updateWhen();
+    updatePositionCard();
+  },
+  extras() {
+    applyModeText();
   },
   review() {
     renderReview();
   },
 };
 
-async function goNext() {
-  const fields = collectFields();
+// Validates the current step and returns true if it passed.
+function checkCurrentStep() {
   const stepName = currentSteps()[state.stepIndex];
-  const errors = validators[stepName](fields);
+  const errors = validators[stepName](collectFields());
   if (errors.length > 0) {
     showErrors(errors);
+    return false;
+  }
+  return true;
+}
+
+async function goNext() {
+  if (!checkCurrentStep()) {
     return;
   }
-  showStep(state.stepIndex + 1);
+  if (state.returnToReview) {
+    state.returnToReview = false;
+    showStepByName("review");
+  } else {
+    showStep(state.stepIndex + 1);
+  }
   await persistDraft();
 }
 
 async function goBack() {
+  state.returnToReview = false;
   showStep(state.stepIndex - 1);
   await persistDraft();
+}
+
+async function skipToReview() {
+  if (!checkCurrentStep()) {
+    return;
+  }
+  state.returnToReview = false;
+  showStepByName("review");
+  await persistDraft();
+}
+
+// A "Change" button on the check screen.
+function changeStep(stepName) {
+  if (stepName === "observer") {
+    state.includeObserver = true;
+  }
+  state.returnToReview = true;
+  showStepByName(stepName);
 }
 
 // ---------------------------------------------------------------------------
@@ -332,13 +461,15 @@ async function persistDraft() {
   try {
     await saveDraft({
       mode: state.mode,
-      stepIndex: state.stepIndex,
+      includeObserver: state.includeObserver,
+      stepName: currentSteps()[state.stepIndex],
       fields: collectFields(),
       photos: state.photos,
       photoLocation: state.photoLocation,
       gpsAccuracyMetres: state.gpsAccuracyMetres,
+      gpsTime: state.gpsTime,
       locationSource: state.locationSource,
-      eventDateEditedByUser: state.eventDateEditedByUser,
+      eventDateSource: state.eventDateSource,
       savedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -349,19 +480,28 @@ async function persistDraft() {
 
 function applyDraft(draft) {
   state.mode = draft.mode;
+  state.includeObserver = Boolean(draft.includeObserver);
   state.photos = draft.photos || [];
   state.photoLocation = draft.photoLocation || null;
   state.gpsAccuracyMetres = draft.gpsAccuracyMetres ?? null;
+  state.gpsTime = draft.gpsTime || null;
   state.locationSource = draft.locationSource || null;
-  state.eventDateEditedByUser = Boolean(draft.eventDateEditedByUser);
+  state.eventDateSource = draft.eventDateSource || null;
   restoreFields(draft.fields || {});
-  if (draft.fields?.speciesId) {
-    renderSpeciesDetail(document.getElementById("speciesDetail"), state.speciesData, draft.fields.speciesId);
-  }
+  fillTypedPosition();
+  state.picker?.showForValue(draft.fields?.speciesId);
   renderPhotoList();
   applyModeText();
   updateConditionalFields();
-  showStep(draft.stepIndex || 0);
+  const index = currentSteps().indexOf(draft.stepName);
+  showStep(index === -1 ? 0 : index);
+}
+
+async function saveAndExit() {
+  if (!form.hidden) {
+    await persistDraft();
+  }
+  window.location.href = "index.html";
 }
 
 // ---------------------------------------------------------------------------
@@ -371,7 +511,7 @@ function applyDraft(draft) {
 async function handlePhotoInput(event) {
   const files = Array.from(event.target.files || []);
   event.target.value = ""; // so choosing the same file again still triggers "change"
-  const status = document.getElementById("photoStatus");
+  const status = byId("photoStatus");
   const room = maxPhotos - state.photos.length;
   if (room <= 0) {
     status.textContent = `You can add up to ${numberInWords(maxPhotos)} photos. Remove one first.`;
@@ -391,13 +531,14 @@ async function handlePhotoInput(event) {
 
       if (metadata.latitude !== null && !state.photoLocation) {
         state.photoLocation = { latitude: metadata.latitude, longitude: metadata.longitude };
-        if (!document.getElementById("latitude").value) {
+        if (!byId("latitude").value) {
           setLocation(metadata.latitude, metadata.longitude, "photo");
           messages.push("The location has been filled in from your photo. Please check it.");
         }
       }
-      if (metadata.takenAt && !state.eventDateEditedByUser) {
-        document.getElementById("eventDate").value = toLocalInputValue(metadata.takenAt);
+      if (metadata.takenAt && state.eventDateSource !== "user") {
+        byId("eventDate").value = toLocalInputValue(metadata.takenAt);
+        state.eventDateSource = "photo";
         messages.push("The date and time have been filled in from your photo.");
       }
     } catch (error) {
@@ -410,7 +551,7 @@ async function handlePhotoInput(event) {
 }
 
 function renderPhotoList() {
-  const list = document.getElementById("photoList");
+  const list = byId("photoList");
   // Release old preview URLs so they do not use up memory.
   for (const img of list.querySelectorAll("img")) {
     URL.revokeObjectURL(img.src);
@@ -441,11 +582,11 @@ function renderPhotoList() {
 // ---------------------------------------------------------------------------
 
 function renderPrecisionChoices() {
-  const container = document.getElementById("precisionChoices");
-  container.innerHTML = Object.entries(precisionOptions)
+  byId("precisionChoices").innerHTML = Object.entries(precisionOptions)
     .map(
       ([value, option]) =>
-        `<label class="choice"><input type="radio" name="precision" value="${value}"><span class="choiceText">${escapeHtml(option.label)}</span></label>`
+        `<label class="choice"><input type="radio" name="precision" value="${value}"><span class="choiceMark"></span>` +
+        `<span class="choiceText">${escapeHtml(option.label)}${option.hint ? `<small>${escapeHtml(option.hint)}</small>` : ""}</span></label>`
     )
     .join("");
 }
@@ -458,8 +599,8 @@ function initMap() {
   if (!window.L) {
     return;
   }
-  const lat = numberOrNull(document.getElementById("latitude").value);
-  const lon = numberOrNull(document.getElementById("longitude").value);
+  const lat = numberOrNull(byId("latitude").value);
+  const lon = numberOrNull(byId("longitude").value);
   const hasPoint = lat !== null && lon !== null;
 
   map = window.L.map("locationMap").setView(hasPoint ? [lat, lon] : [54.5, -4.0], hasPoint ? 11 : 5);
@@ -490,9 +631,10 @@ function placeMarker(latitude, longitude) {
   }
 }
 
-function setLocation(latitude, longitude, source, { moveMap = true } = {}) {
-  document.getElementById("latitude").value = latitude.toFixed(5);
-  document.getElementById("longitude").value = longitude.toFixed(5);
+// Sets the saved position. Everything that shows the position is updated from here.
+function setLocation(latitude, longitude, source, { moveMap = true, fillTyped = true } = {}) {
+  byId("latitude").value = latitude.toFixed(5);
+  byId("longitude").value = longitude.toFixed(5);
   state.locationSource = source;
   if (source !== "gps") {
     // The GPS accuracy no longer describes this point.
@@ -502,19 +644,60 @@ function setLocation(latitude, longitude, source, { moveMap = true } = {}) {
   if (map && moveMap) {
     map.setView([latitude, longitude], Math.max(map.getZoom(), 11));
   }
-  document.getElementById("boundsWarning").hidden = isInUkIrelandWaters(latitude, longitude);
+  if (fillTyped) {
+    fillTypedPosition();
+  }
+  byId("boundsWarning").hidden = isInUkIrelandWaters(latitude, longitude);
+  updatePositionCard();
+}
+
+function clearLocation() {
+  byId("latitude").value = "";
+  byId("longitude").value = "";
+  state.locationSource = null;
+  state.gpsAccuracyMetres = null;
+  byId("boundsWarning").hidden = true;
+  updatePositionCard();
+}
+
+function updatePositionCard() {
+  const lat = numberOrNull(byId("latitude").value);
+  const lon = numberOrNull(byId("longitude").value);
+  const card = byId("positionCard");
+  if (lat === null || lon === null) {
+    card.hidden = true;
+    return;
+  }
+  const sources = {
+    gps: "Position found",
+    photo: "Position from your photo",
+    map: "Pin placed on the map",
+    manual: "Position typed in",
+  };
+  byId("positionSource").textContent = sources[state.locationSource] || "Position";
+  byId("positionText").innerHTML = formatPosition(lat, lon)
+    .split(", ")
+    .map((part) => `<span>${escapeHtml(part)}</span>`)
+    .join("");
+  byId("positionAccuracy").textContent =
+    state.locationSource === "gps" && state.gpsAccuracyMetres
+      ? `GPS accurate to about ${state.gpsAccuracyMetres}m${state.gpsTime ? `, at ${formatTime(new Date(state.gpsTime))}` : ""}.`
+      : "";
+  card.hidden = false;
 }
 
 async function useGps() {
-  const status = document.getElementById("gpsStatus");
-  const button = document.getElementById("gpsButton");
+  const status = byId("gpsStatus");
+  const button = byId("gpsButton");
   status.textContent = "Finding your position. At sea this can take up to 30 seconds...";
   button.disabled = true;
   try {
     const position = await getCurrentPosition();
+    state.gpsTime = new Date().toISOString();
     setLocation(position.latitude, position.longitude, "gps");
     state.gpsAccuracyMetres = position.accuracyMetres;
-    status.textContent = `Position found, accurate to about ${position.accuracyMetres}m. Move the pin if the shark was somewhere else.`;
+    updatePositionCard();
+    status.textContent = `Position found, accurate to about ${position.accuracyMetres}m. Drag the pin if the shark was somewhere else.`;
     await persistDraft();
   } catch (error) {
     status.textContent = error.message;
@@ -523,27 +706,131 @@ async function useGps() {
   }
 }
 
-function handleCoordinateTyping() {
-  const lat = numberOrNull(document.getElementById("latitude").value);
-  const lon = numberOrNull(document.getElementById("longitude").value);
-  if (lat !== null && lon !== null && validateCoords(lat, lon).length === 0) {
-    state.locationSource = "manual";
-    state.gpsAccuracyMetres = null;
-    placeMarker(lat, lon);
-    map?.setView([lat, lon], Math.max(map.getZoom(), 11));
-    document.getElementById("boundsWarning").hidden = isInUkIrelandWaters(lat, lon);
+// ---- Typed positions (degrees and minutes, or decimal degrees) ----
+
+function typedFormat() {
+  return form.querySelector('input[name="coordFormat"]:checked')?.value || "ddm";
+}
+
+function showTypedFormat() {
+  const format = typedFormat();
+  for (const row of form.querySelectorAll("#typePosition [data-format]")) {
+    row.hidden = row.dataset.format !== format;
   }
+}
+
+// Reads both typed coordinates. Returns { latitude, longitude, errors, empty }.
+function readTypedPosition() {
+  const format = typedFormat();
+  const hemisphere = (name) => form.querySelector(`input[name="${name}"]:checked`)?.value || "";
+  const lat = parseTypedCoordinate({
+    axis: "lat",
+    format,
+    degrees: byId("latDegrees").value,
+    minutes: byId("latMinutes").value,
+    decimal: byId("latDecimal").value,
+    hemisphere: hemisphere("latHemisphere"),
+  });
+  const lon = parseTypedCoordinate({
+    axis: "lon",
+    format,
+    degrees: byId("lonDegrees").value,
+    minutes: byId("lonMinutes").value,
+    decimal: byId("lonDecimal").value,
+    hemisphere: hemisphere("lonHemisphere"),
+  });
+  const errors = [lat.error, lon.error].filter(Boolean);
+  const empty = lat.value === null && lon.value === null && errors.length === 0;
+  if (!empty && errors.length === 0 && (lat.value === null || lon.value === null)) {
+    errors.push(lat.value === null ? "Type the latitude as well." : "Type the longitude as well.");
+  }
+  return { latitude: lat.value, longitude: lon.value, latError: lat.error, lonError: lon.error, errors, empty };
+}
+
+function showTypedErrors(typed) {
+  for (const [id, message] of [["latError", typed.latError], ["lonError", typed.lonError]]) {
+    const element = byId(id);
+    element.hidden = !message;
+    element.innerHTML = message ? `${icon("alert")}<span>Error: ${escapeHtml(message)}</span>` : "";
+  }
+}
+
+// Called whenever a typed box, direction, or format changes.
+function handleTypedPosition() {
+  const typed = readTypedPosition();
+  showTypedErrors(typed);
+  if (typed.errors.length === 0 && !typed.empty) {
+    setLocation(typed.latitude, typed.longitude, "manual", { fillTyped: false });
+  } else if (!typed.empty) {
+    // A half-typed position must not leave an old one saved without the user knowing.
+    clearLocation();
+  }
+}
+
+// Copies the saved position into the typed boxes (both formats).
+function fillTypedPosition() {
+  const lat = numberOrNull(byId("latitude").value);
+  const lon = numberOrNull(byId("longitude").value);
+  if (lat === null || lon === null) {
+    return;
+  }
+  for (const [axis, value, prefix, hemisphereName] of [
+    ["lat", lat, "lat", "latHemisphere"],
+    ["lon", lon, "lon", "lonHemisphere"],
+  ]) {
+    const parts = splitCoordinate(value, axis);
+    byId(`${prefix}Degrees`).value = parts.degrees;
+    byId(`${prefix}Minutes`).value = parts.minutes;
+    byId(`${prefix}Decimal`).value = parts.decimal;
+    const radio = form.querySelector(`input[name="${hemisphereName}"][value="${parts.hemisphere}"]`);
+    if (radio) radio.checked = true;
+  }
+  showTypedErrors({ latError: null, lonError: null });
 }
 
 // ---------------------------------------------------------------------------
 // Date and time
 // ---------------------------------------------------------------------------
 
-function updateEventDateHint() {
-  const value = document.getElementById("eventDate").value;
-  const hint = document.getElementById("eventDateHint");
+function updateWhen() {
+  const value = byId("eventDate").value;
   const date = value ? new Date(value) : null;
-  hint.textContent = date && !Number.isNaN(date.getTime()) ? formatDateTime(date) : "";
+  const valid = date && !Number.isNaN(date.getTime());
+  const text = valid ? formatDateTime(date) : "Not set";
+  byId("eventDateHint").textContent = valid ? text : "";
+  byId("whenText").textContent = text;
+  const sources = { now: "Set to now", photo: "Taken from your photo", user: "Set by you" };
+  byId("whenSource").textContent = sources[state.eventDateSource] || "";
+}
+
+function setWhenEditing(editing) {
+  byId("whenEdit").hidden = !editing;
+  byId("whenChange").setAttribute("aria-expanded", String(editing));
+}
+
+// ---------------------------------------------------------------------------
+// Time spent looking: quick buttons that fill in the minutes box
+// ---------------------------------------------------------------------------
+
+function handleDurationPreset(event) {
+  if (event.target.name !== "durationPreset") {
+    return;
+  }
+  const input = byId("durationMinutes");
+  if (event.target.value === "other") {
+    input.focus();
+  } else {
+    input.value = event.target.value;
+  }
+}
+
+function syncDurationPreset() {
+  const value = byId("durationMinutes").value.trim();
+  const presets = [...form.querySelectorAll('input[name="durationPreset"]')];
+  const match = presets.find((radio) => radio.value === value);
+  for (const radio of presets) {
+    radio.checked = match ? radio === match : value !== "" && radio.value === "other";
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -554,6 +841,7 @@ function buildReport(fields) {
   const isSighting = state.mode === "sighting";
   const anonymous = Boolean(fields.anonymous);
   const encounterNeedsGear = ["caughtReleased", "bycatch"].includes(fields.encounterType);
+  const choice = isSighting ? parseSpeciesChoice(state.speciesData, fields.speciesId) : null;
 
   return {
     id: newId(),
@@ -576,12 +864,15 @@ function buildReport(fields) {
       uncertaintyMetres: uncertaintyMetres(fields.precision, state.gpsAccuracyMetres),
       gpsAccuracyMetres: state.gpsAccuracyMetres,
       source: state.locationSource || "manual",
+      locality: fields.locality || null,
     },
     eventDate: toIsoWithOffset(new Date(fields.eventDate)),
     identification: isSighting
       ? {
-          speciesId: fields.speciesId,
-          confidence: fields.speciesId === notSureId ? null : fields.confidence,
+          speciesId: choice.speciesId,
+          // Set when the observer was sure of the kind of shark but not the species.
+          speciesGroup: choice.isNotSure ? choice.groupId : null,
+          confidence: choice.isNotSure ? null : fields.confidence,
         }
       : null,
     count: isSighting
@@ -611,13 +902,14 @@ function buildReport(fields) {
   };
 }
 
-// Human-readable labels for the review screen, taken from the form itself so
+// Human-readable labels for the check screen, taken from the form itself so
 // the wording is only written once (in report.html).
 function labelFor(name, value) {
   const input = form.querySelector(`input[name="${name}"][value="${value}"]`);
   if (input) {
-    const text = input.closest("label").querySelector(".choiceText");
-    return text ? text.firstChild.textContent.trim() : value;
+    const label = input.closest("label");
+    const text = label.querySelector(".choiceText");
+    return text ? text.firstChild.textContent.trim() : label.textContent.trim();
   }
   const option = form.querySelector(`select[name="${name}"] option[value="${value}"]`);
   return option ? option.textContent : value;
@@ -626,46 +918,67 @@ function labelFor(name, value) {
 function renderReview() {
   const fields = collectFields();
   const rows = [];
-  const add = (label, value) => {
-    if (value !== null && value !== undefined && value !== "") rows.push([label, value]);
-  };
+  // Each row: what it is, the answer, a second line, and which step "Change" goes to.
+  const add = (label, value, sub, step) => rows.push({ label, value, sub, step });
+  const isSighting = state.mode === "sighting";
 
-  add("Type", state.mode === "absence" ? "No sharks seen" : "Sighting");
-  add("You are", labelFor("role", fields.role) + (fields.fisherType ? ` (${labelFor("fisherType", fields.fisherType)})` : ""));
-  add("Experience", labelFor("experience", fields.experience));
-  add("Reported by", fields.anonymous ? "Anonymous" : fields.observerName || "Not given");
-
+  if (!isSighting) {
+    add("Type of report", "No sharks seen", null, null);
+  }
+  if (isSighting) {
+    add("Photos", state.photos.length ? `${numberInWords(state.photos.length)} ${state.photos.length === 1 ? "photo" : "photos"}` : "No photo", state.photos.length ? "Location data removed" : null, "photo");
+  }
   if (fields.latitude) {
-    add("Location", formatCoords(Number(fields.latitude), Number(fields.longitude)));
-    add("Accuracy", precisionOptions[fields.precision]?.label);
+    const precision = precisionOptions[fields.precision]?.label;
+    add("Where", formatPosition(Number(fields.latitude), Number(fields.longitude)), [precision, fields.locality].filter(Boolean).join(". "), "where");
   }
-  if (fields.eventDate) add("When", formatDateTime(new Date(fields.eventDate)));
+  if (fields.eventDate) add("When", formatDateTime(new Date(fields.eventDate)), null, "where");
 
-  if (state.mode === "sighting") {
-    add("Photos", state.photos.length ? numberInWords(state.photos.length) : "None");
-    const species = findSpecies(state.speciesData, fields.speciesId);
-    add("Species", species ? species.commonName : "Not sure");
-    if (species) add("How sure", labelFor("confidence", fields.confidence));
-    add("Number", fields.individualCount + (fields.countIsEstimate ? " (estimate)" : ""));
-    add("Encounter", labelFor("encounterType", fields.encounterType));
-    if (fields.gearType && !form.querySelector('[data-show-when^="encounterType"]').hidden) {
-      add("Fishing method", labelFor("gearType", fields.gearType));
-    }
-    if (fields.lengthBand) add("Length", labelFor("lengthBand", fields.lengthBand));
-    if (fields.sex) add("Sex", labelFor("sex", fields.sex));
-    if (fields.behaviour?.length) add("Behaviour", fields.behaviour.map((b) => labelFor("behaviour", b)).join(", "));
-    if (fields.depthMetres) add("Depth", `${fields.depthMetres}m`);
-    if (fields.waterTempCelsius) add("Water temperature", `${fields.waterTempCelsius}°C`);
-    add("Tag", fields.tagsSeen);
-    add("Notes", fields.notes);
-  }
-  if (fields.durationMinutes) add("Time looking", `${fields.durationMinutes} minutes`);
-  if (fields.minDepthMetres || fields.maxDepthMetres) {
-    add("Depth range", `${fields.minDepthMetres || "?"}m to ${fields.maxDepthMetres || "?"}m`);
+  if (isSighting) {
+    const choice = parseSpeciesChoice(state.speciesData, fields.speciesId);
+    add("What", describeSpeciesChoice(state.speciesData, choice.speciesId, choice.groupId), choice.isNotSure ? null : labelFor("confidence", fields.confidence), "what");
+    const gearShown = !form.querySelector('[data-show-when^="encounterType"]').hidden;
+    add(
+      "How many",
+      `${fields.individualCount}${fields.countIsEstimate ? " (an estimate)" : ""}`,
+      [labelFor("encounterType", fields.encounterType), gearShown && fields.gearType ? labelFor("gearType", fields.gearType) : ""].filter(Boolean).join(". "),
+      "count"
+    );
+    const shark = [];
+    if (fields.lengthBand) shark.push(labelFor("lengthBand", fields.lengthBand));
+    if (fields.sex) shark.push(labelFor("sex", fields.sex));
+    if (fields.behaviour?.length) shark.push(fields.behaviour.map((b) => labelFor("behaviour", b)).join(", "));
+    if (fields.depthMetres) shark.push(`${fields.depthMetres}m deep`);
+    if (fields.waterTempCelsius) shark.push(`Water ${fields.waterTempCelsius}°C`);
+    if (shark.length) add("The shark", shark.join(". "), null, "extras");
   }
 
-  const list = rows.map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`).join("");
-  document.getElementById("reviewSummary").innerHTML = `<dl class="summaryList">${list}</dl>`;
+  const trip = [];
+  if (fields.durationMinutes) trip.push(`${fields.durationMinutes} minutes`);
+  if (fields.minDepthMetres || fields.maxDepthMetres) trip.push(`${fields.minDepthMetres || "?"}m to ${fields.maxDepthMetres || "?"}m deep`);
+  add("Your dive or trip", trip.length ? trip.join(", ") : "Not given", null, "extras");
+
+  if (isSighting && (fields.tagsSeen || fields.notes)) {
+    add("Tags and notes", [fields.tagsSeen, fields.notes].filter(Boolean).join(". "), null, "extras");
+  }
+
+  const role = labelFor("role", fields.role) + (fields.role === "fisher" && fields.fisherType ? ` (${labelFor("fisherType", fields.fisherType)})` : "");
+  const who = fields.anonymous ? "Anonymous" : fields.observerName || "Name not given";
+  add("Reporting as", role, `${labelFor("experience", fields.experience)} about sharks. ${who}.`, "observer");
+
+  const html = rows
+    .map(
+      (row) => `
+      <div class="checkRow">
+        <div>
+          <dt>${escapeHtml(row.label)}</dt>
+          <dd><strong>${escapeHtml(row.value)}</strong>${row.sub ? `<span>${escapeHtml(row.sub)}</span>` : ""}</dd>
+        </div>
+        ${row.step ? `<button type="button" class="textButton" data-goto="${row.step}">Change<span class="visuallyHidden"> ${escapeHtml(row.label.toLowerCase())}</span></button>` : ""}
+      </div>`
+    )
+    .join("");
+  byId("reviewSummary").innerHTML = `<dl class="checkList">${html}</dl>`;
 }
 
 async function handleSubmit(event) {
@@ -683,7 +996,7 @@ async function handleSubmit(event) {
   }
 
   const report = buildReport(fields);
-  const submitButton = document.getElementById("submitButton");
+  const submitButton = byId("submitButton");
   submitButton.disabled = true;
   try {
     await saveReport(report);
@@ -703,8 +1016,8 @@ async function handleSubmit(event) {
   }
 
   form.hidden = true;
-  document.getElementById("donePanel").hidden = false;
-  document.getElementById("doneHeading").focus();
+  byId("donePanel").hidden = false;
+  byId("doneHeading").focus();
   await updatePendingCount();
 }
 
@@ -714,9 +1027,23 @@ async function handleSubmit(event) {
 
 function applyModeText() {
   const isAbsence = state.mode === "absence";
-  document.getElementById("pageTitle").textContent = isAbsence ? "I looked, but saw no sharks" : "Report a shark sighting";
-  const effortHeading = form.querySelector('[data-step="effort"] h2');
-  effortHeading.textContent = isAbsence ? effortHeading.dataset.headingAbsence : effortHeading.dataset.headingSighting;
+  byId("pageTitle").textContent = isAbsence ? "No sharks seen" : "Report a sighting";
+  document.title = `${isAbsence ? "I looked, but saw no sharks" : "Report a sighting"} | Shark Sightings`;
+  byId("extrasHeading").textContent = isAbsence ? "Your dive or trip" : "Anything more to add?";
+  if (!isAbsence) {
+    byId("extrasHeading").insertAdjacentHTML("beforeend", '<span class="optionalTag">Optional</span>');
+  }
+  byId("extrasLead").innerHTML = isAbsence
+    ? "Tell us about the dive or trip where you saw no sharks. The time spent looking is needed; the depths are optional."
+    : "Everything here is <strong>optional</strong>. Add what you can, or skip straight to checking your report.";
+  byId("skipButton").hidden = isAbsence;
+  byId("effortBadge").textContent = isAbsence ? "Needed" : "Most useful";
+  for (const element of form.querySelectorAll("[data-sighting-only]")) {
+    element.hidden = isAbsence;
+  }
+  if (isAbsence) {
+    byId("effortFold").open = true;
+  }
 }
 
 async function startFresh() {
@@ -724,6 +1051,7 @@ async function startFresh() {
   if (remembered) {
     restoreFields(remembered);
   }
+  state.includeObserver = !remembered;
   applyModeText();
   updateConditionalFields();
   showStep(0, { focus: false });
@@ -736,42 +1064,67 @@ async function init() {
   renderPrecisionChoices();
   try {
     state.speciesData = await loadSpeciesData();
-    renderSpeciesPicker(document.getElementById("speciesPicker"), state.speciesData, null, (speciesId) => {
-      renderSpeciesDetail(document.getElementById("speciesDetail"), state.speciesData, speciesId);
-      updateConditionalFields();
+    state.picker = renderSpeciesPicker(byId("speciesPicker"), state.speciesData, {
+      onChange: () => updateConditionalFields(),
     });
   } catch (error) {
-    document.getElementById("speciesPicker").innerHTML = `<p class="errorSummary">${escapeHtml(error.message)}</p>`;
+    byId("speciesPicker").innerHTML = `<p class="errorSummary">${escapeHtml(error.message)}</p>`;
   }
 
   form.addEventListener("change", updateConditionalFields);
+  form.addEventListener("change", handleDurationPreset);
+  form.addEventListener("change", clearFieldError);
+  form.addEventListener("input", clearFieldError);
   form.addEventListener("submit", handleSubmit);
-  document.getElementById("nextButton").addEventListener("click", goNext);
-  document.getElementById("backButton").addEventListener("click", goBack);
-  document.getElementById("photoInput").addEventListener("change", handlePhotoInput);
-  document.getElementById("gpsButton").addEventListener("click", useGps);
-  document.getElementById("photoLocationButton").addEventListener("click", () => {
+  byId("nextButton").addEventListener("click", goNext);
+  byId("backButton").addEventListener("click", goBack);
+  byId("skipButton").addEventListener("click", skipToReview);
+  byId("saveExitButton").addEventListener("click", saveAndExit);
+  byId("photoInput").addEventListener("change", handlePhotoInput);
+  byId("gpsButton").addEventListener("click", useGps);
+  byId("photoLocationButton").addEventListener("click", () => {
     setLocation(state.photoLocation.latitude, state.photoLocation.longitude, "photo");
   });
-  document.getElementById("latitude").addEventListener("change", handleCoordinateTyping);
-  document.getElementById("longitude").addEventListener("change", handleCoordinateTyping);
-  document.getElementById("eventDate").addEventListener("input", () => {
-    state.eventDateEditedByUser = true;
-    updateEventDateHint();
+
+  for (const id of ["latDegrees", "latMinutes", "latDecimal", "lonDegrees", "lonMinutes", "lonDecimal"]) {
+    byId(id).addEventListener("change", handleTypedPosition);
+  }
+  for (const radio of form.querySelectorAll('input[name="latHemisphere"], input[name="lonHemisphere"]')) {
+    radio.addEventListener("change", handleTypedPosition);
+  }
+  for (const radio of form.querySelectorAll('input[name="coordFormat"]')) {
+    radio.addEventListener("change", () => {
+      showTypedFormat();
+      fillTypedPosition();
+    });
+  }
+
+  byId("whenChange").addEventListener("click", () => {
+    const editing = byId("whenEdit").hidden;
+    setWhenEditing(editing);
+    if (editing) byId("eventDate").focus();
+  });
+  byId("eventDate").addEventListener("input", () => {
+    state.eventDateSource = "user";
+    updateWhen();
+  });
+  byId("durationMinutes").addEventListener("input", syncDurationPreset);
+  byId("reviewSummary").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-goto]");
+    if (button) changeStep(button.dataset.goto);
   });
 
   const draft = await loadDraft();
   if (draft) {
-    const resumePanel = document.getElementById("resumePanel");
-    document.getElementById("resumeText").textContent =
-      `Started ${formatDateTime(new Date(draft.savedAt))}. Would you like to continue it?`;
+    const resumePanel = byId("resumePanel");
+    byId("resumeText").textContent = `Started ${formatDateTime(new Date(draft.savedAt))}. Would you like to continue it?`;
     resumePanel.hidden = false;
-    document.getElementById("resumeButton").addEventListener("click", () => {
+    byId("resumeButton").addEventListener("click", () => {
       resumePanel.hidden = true;
       form.hidden = false;
       applyDraft(draft);
     });
-    document.getElementById("discardButton").addEventListener("click", async () => {
+    byId("discardButton").addEventListener("click", async () => {
       await clearDraft();
       resumePanel.hidden = true;
       form.hidden = false;

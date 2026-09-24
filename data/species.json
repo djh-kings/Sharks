@@ -3,34 +3,44 @@
   "verified": false,
   "groups": [
     {
-      "id": "openWater",
-      "name": "Large sharks of open water",
-      "hint": "Big, powerful sharks, usually seen from a boat or near the surface.",
-      "silhouette": "icons/silhouettes/openWater.svg"
+      "id": "catsharks",
+      "name": "Catsharks (spotted, on the seabed)",
+      "hint": "Small, slim, spotted sharks that rest on the seabed. The most common sighting for divers.",
+      "silhouette": "icons/silhouettes/catshark.svg",
+      "question": "Which catshark?",
+      "notSureLabel": "Not sure which catshark"
     },
     {
       "id": "slender",
       "name": "Slender, medium-sized sharks",
       "hint": "Grey, streamlined sharks, often caught by anglers.",
-      "silhouette": "icons/silhouettes/slender.svg"
+      "silhouette": "icons/silhouettes/slender.svg",
+      "question": "Which slender shark?",
+      "notSureLabel": "Not sure which slender shark"
     },
     {
-      "id": "catsharks",
-      "name": "Catsharks (spotted, on the seabed)",
-      "hint": "Small, slim, spotted sharks that rest on the seabed. The most common sighting for divers.",
-      "silhouette": "icons/silhouettes/catshark.svg"
+      "id": "openWater",
+      "name": "Large sharks of open water",
+      "hint": "Big, powerful sharks, usually seen from a boat or near the surface.",
+      "silhouette": "icons/silhouettes/openWater.svg",
+      "question": "Which large shark?",
+      "notSureLabel": "Not sure which large shark"
     },
     {
       "id": "flattened",
       "name": "Flattened sharks",
       "hint": "Flat, wide sharks that lie buried in sand. They can look like a ray.",
-      "silhouette": "icons/silhouettes/flattened.svg"
+      "silhouette": "icons/silhouettes/flattened.svg",
+      "question": "Which flat shark?",
+      "notSureLabel": "Not sure which flat shark"
     },
     {
       "id": "deepRare",
       "name": "Rare and deep-water sharks",
       "hint": "Unusual sightings. A photo is especially valuable.",
-      "silhouette": "icons/silhouettes/deepRare.svg"
+      "silhouette": "icons/silhouettes/deepRare.svg",
+      "question": "Which rare shark?",
+      "notSureLabel": "Not sure which rare shark"
     }
   ],
   "species": [
