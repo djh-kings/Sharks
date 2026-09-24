@@ -60,6 +60,8 @@ This drives Chromium through a full sighting report (with a photo carrying EXIF 
 
 ## Before launch
 
+UI and UX work should follow the [design brief](docs/design-brief.md).
+
 - [ ] Biology Department to check the species list, key features, and lookalikes, then set `"verified": true`.
 - [ ] Replace the placeholder group silhouettes with proper illustrations or photos (with permission).
 - [ ] Add conservation status from a current, cited source.
