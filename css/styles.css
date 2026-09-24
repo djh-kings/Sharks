@@ -1254,6 +1254,11 @@ input:disabled {
   height: 22rem;
 }
 
+/* Map or Satellite, just above the map. */
+.switcher.mapStyle {
+  margin-bottom: 0.5rem;
+}
+
 .coordRow {
   display: flex;
   flex-wrap: wrap;

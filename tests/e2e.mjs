@@ -222,6 +222,15 @@ try {
   await type(page, "#lonMinutes", "9");
   check("a typed position is saved as signed decimal degrees", (await page.inputValue("#longitude")) === "-4.15000");
 
+  // Map or satellite photos.
+  check("map style switch shown online", await page.isVisible("#mapStyleSwitch"));
+  await choose(page, "mapStyle", "satellite");
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("#locationMap img.leaflet-tile")].some((img) => img.src.includes("World_Imagery"))
+  );
+  check("Satellite switches the map to photos", true);
+  check("satellite photos are credited", (await page.textContent("#locationMap .leaflet-control-attribution")).includes("Esri"));
+
   await choose(page, "precision", "withinOneKm");
   await page.fill("#locality", "Hand Deeps");
   await page.screenshot({ path: `${outputDir}/04-where.png`, fullPage: true });
@@ -322,6 +331,7 @@ try {
   check("about you not asked again", await page.isHidden('[data-step="observer"]'));
   check("offline map note shown", await page.isVisible("#mapOfflineNote"));
   check("map hidden offline", await page.isHidden("#locationMap"));
+  check("map style switch hidden offline", await page.isHidden("#mapStyleSwitch"));
   check("typed position opens by itself offline", await page.evaluate(() => document.getElementById("typePosition").open));
 
   // The smallest phones: 320px wide.
@@ -358,6 +368,7 @@ try {
   await page.waitForSelector(".reportCard");
   check("both reports listed", (await page.locator(".reportCard").count()) === 2);
   check("status shown in words, not colour alone", (await page.textContent("#reportsList")).includes("Waiting to upload"));
+  check("satellite choice remembered on My reports", await page.isChecked('input[name="reportsMapStyle"][value="satellite"]'));
   await page.screenshot({ path: `${outputDir}/09-reports.png`, fullPage: true });
 
   const [download] = await Promise.all([page.waitForEvent("download"), page.click("#exportButton")]);

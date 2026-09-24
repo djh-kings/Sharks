@@ -12,6 +12,7 @@ import { precisionOptions } from "./geo.js";
 import { reportToDwc, toCsv, downloadCsv } from "./exportDwc.js";
 import { updatePendingCount } from "./app.js";
 import { icon } from "./icons.js";
+import { addMapLayers } from "./mapLayers.js";
 
 let speciesData = null;
 let map = null;
@@ -44,10 +45,7 @@ function drawMap(reports) {
   }
   if (!map) {
     map = window.L.map("reportsMap").setView([54.5, -4.0], 5);
-    window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    addMapLayers(map, "reportsMapStyle");
     markerLayer = window.L.featureGroup().addTo(map);
   }
   markerLayer.clearLayers();
@@ -160,6 +158,7 @@ async function init() {
     });
   }
   if (!navigator.onLine) {
+    document.getElementById("reportsMapStyleSwitch").hidden = true;
     document.getElementById("reportsMap").outerHTML =
       `<div class="notice">${icon("noSignal")}<p>The map cannot load without a signal. Your reports are listed below.</p></div>`;
   }

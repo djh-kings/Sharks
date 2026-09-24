@@ -45,6 +45,7 @@ This drives Chromium through a full sighting report (including the species picke
 | `js/photos.js` | Reads EXIF, resizes photos, removes metadata |
 | `js/speciesPicker.js` | Species picker: shapes, species, key features, and the lookalike comparison |
 | `js/icons.js` | The small line icons, as SVG strings |
+| `js/mapLayers.js` | The Map and Satellite styles, and the switch between them |
 | `js/exportDwc.js` | Darwin Core mapping and CSV |
 | `js/format.js` | House-style dates ("Monday 20th July 2026"), times ("9.00am"), and numbers |
 | `data/species.json` | Species list, used by both the picker and the guide |
@@ -73,6 +74,7 @@ Screen widths: under 360px the stage names are hidden; from 768px (tablets) grid
 - [ ] Replace the placeholder group silhouettes with proper illustrations or photos (with permission).
 - [ ] Add conservation status from a current, cited source.
 - [ ] Confirm the Darwin Core mapping with the receiving charity (eg recording "not sure" as `Selachimorpha`, and "Not sure which catshark" as a remark rather than a taxon, because the picker's shape groups do not match scientific families exactly).
+- [ ] Check the terms of use for the satellite photos (Esri World Imagery, set in `js/mapLayers.js`) for a public, non-commercial site with this number of users. If they do not fit, swap the provider there.
 - [ ] Add structured traits to `data/species.json` (eg size, spots, nostril flaps) so the lookalike comparison can line up like with like. At present it lists each species' key features side by side.
 - [ ] Data Protection Officer sign-off before collecting any personal data from the public.
 - [ ] Backend: upload queue, verification workflow, public map with blurred locations.

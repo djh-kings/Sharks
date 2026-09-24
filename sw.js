@@ -6,7 +6,7 @@
 // IMPORTANT: when you change any file listed below, increase cacheVersion.
 // Otherwise phones that already have the app will keep the old copy.
 
-const cacheVersion = "v2";
+const cacheVersion = "v3";
 const cacheName = `sharkSightings-${cacheVersion}`;
 
 const appFiles = [
@@ -22,6 +22,7 @@ const appFiles = [
   "js/exportDwc.js",
   "js/format.js",
   "js/icons.js",
+  "js/mapLayers.js",
   "js/geo.js",
   "js/photos.js",
   "js/report.js",
@@ -67,8 +68,8 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Only handle our own files. Map tiles come from OpenStreetMap and are not
-  // cached: their usage policy does not allow bulk caching.
+  // Only handle our own files. Map tiles (OpenStreetMap) and satellite photos
+  // (Esri) are not cached: their terms do not allow bulk caching.
   if (request.method !== "GET" || url.origin !== self.location.origin) {
     return;
   }

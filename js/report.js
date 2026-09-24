@@ -44,6 +44,7 @@ import {
 } from "./speciesPicker.js";
 import { updatePendingCount } from "./app.js";
 import { icon } from "./icons.js";
+import { addMapLayers } from "./mapLayers.js";
 
 const stagesByMode = {
   sighting: [
@@ -93,7 +94,7 @@ let marker = null;
 function collectFields() {
   const fields = {};
   for (const element of form.elements) {
-    if (!element.name || element.type === "file") {
+    if (!element.name || element.type === "file" || element.name === "mapStyle") {
       continue;
     }
     if (element.type === "radio") {
@@ -380,6 +381,7 @@ const stepEnterHooks = {
     const online = navigator.onLine;
     byId("mapOfflineNote").hidden = online;
     byId("locationMap").hidden = !online;
+    byId("mapStyleSwitch").hidden = !online;
     if (!online) {
       byId("typePosition").open = true;
     }
@@ -604,10 +606,7 @@ function initMap() {
   const hasPoint = lat !== null && lon !== null;
 
   map = window.L.map("locationMap").setView(hasPoint ? [lat, lon] : [54.5, -4.0], hasPoint ? 11 : 5);
-  window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(map);
+  addMapLayers(map, "mapStyle");
 
   if (hasPoint) {
     placeMarker(lat, lon);

@@ -114,6 +114,10 @@
         </div>
 
         <div id="mapOfflineNote" class="notice" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><p>The map cannot load without a signal. Type the position from your phone, chart plotter, or dive computer.</p></div>
+        <div class="switcher mapStyle" id="mapStyleSwitch" role="radiogroup" aria-label="Map style">
+          <label class="segment"><input type="radio" name="mapStyle" value="map" checked><span>Map</span></label>
+          <label class="segment"><input type="radio" name="mapStyle" value="satellite"><span>Satellite</span></label>
+        </div>
         <div id="locationMap" class="map" role="application" aria-label="Map. Tap to place the pin, or drag it."></div>
 
         <details class="fold" id="typePosition">

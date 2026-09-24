@@ -49,7 +49,11 @@
 
     <div class="reportsLayout" id="reportsLayout" data-view="list">
       <section class="reportsMapPanel" aria-label="Map of your reports">
-        <div id="reportsMap" class="map mapLarge"></div>
+        <div class="switcher mapStyle" id="reportsMapStyleSwitch" role="radiogroup" aria-label="Map style">
+            <label class="segment"><input type="radio" name="reportsMapStyle" value="map" checked><span>Map</span></label>
+            <label class="segment"><input type="radio" name="reportsMapStyle" value="satellite"><span>Satellite</span></label>
+          </div>
+          <div id="reportsMap" class="map mapLarge"></div>
         <p class="hint small">The numbers on the map match the list. Circles show how accurate each location is. Locations are shown only to you.</p>
       </section>
       <section class="reportsListPanel" aria-labelledby="listHeading">
