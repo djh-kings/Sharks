@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My reports | Shark Sightings</title>
+  <meta name="theme-color" content="#0b4f6c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="vendor/leaflet/leaflet.js" defer></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/sightings.js"></script>
+</head>
+<body>
+  <header class="siteHeader">
+    <a class="siteTitle" href="index.html">Shark Sightings</a>
+    <nav class="siteNav" aria-label="Main">
+      <a href="report.html">Report</a>
+      <a href="sightings.html" aria-current="page">My reports</a>
+      <a href="species.html">Species guide</a>
+    </nav>
+  </header>
+  <div id="offlineBanner" class="banner" hidden>You are offline.</div>
+
+  <main>
+    <h1>My reports</h1>
+    <p>These are the reports saved on this device. Nobody else can see them yet.</p>
+
+    <div id="reportsMap" class="map mapLarge" role="region" aria-label="Map of your reports"></div>
+
+    <div class="card">
+      <h2>Export for scientists</h2>
+      <p>Download your reports as a Darwin Core CSV file. This is the standard format used by biological record centres and conservation charities.</p>
+      <button type="button" class="button" id="exportButton">Download CSV</button>
+      <p id="exportStatus" class="hint" aria-live="polite"></p>
+    </div>
+
+    <h2>All reports</h2>
+    <div id="reportsList"><p>Loading...</p></div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,228 @@
+{
+  "_comment": "DRAFT species list for UK and Ireland waters. Names, identification features, and lookalikes must be checked by the King's biology department before launch. Conservation status is deliberately left out until it has been verified from a current source (eg the IUCN Red List).",
+  "verified": false,
+  "groups": [
+    {
+      "id": "openWater",
+      "name": "Large sharks of open water",
+      "hint": "Big, powerful sharks, usually seen from a boat or near the surface.",
+      "silhouette": "icons/silhouettes/openWater.svg"
+    },
+    {
+      "id": "slender",
+      "name": "Slender, medium-sized sharks",
+      "hint": "Grey, streamlined sharks, often caught by anglers.",
+      "silhouette": "icons/silhouettes/slender.svg"
+    },
+    {
+      "id": "catsharks",
+      "name": "Catsharks (spotted, on the seabed)",
+      "hint": "Small, slim, spotted sharks that rest on the seabed. The most common sighting for divers.",
+      "silhouette": "icons/silhouettes/catshark.svg"
+    },
+    {
+      "id": "flattened",
+      "name": "Flattened sharks",
+      "hint": "Flat, wide sharks that lie buried in sand. They can look like a ray.",
+      "silhouette": "icons/silhouettes/flattened.svg"
+    },
+    {
+      "id": "deepRare",
+      "name": "Rare and deep-water sharks",
+      "hint": "Unusual sightings. A photo is especially valuable.",
+      "silhouette": "icons/silhouettes/deepRare.svg"
+    }
+  ],
+  "species": [
+    {
+      "id": "baskingShark",
+      "group": "openWater",
+      "commonName": "Basking shark",
+      "scientificName": "Cetorhinus maximus",
+      "keyFeatures": [
+        "Very large, often longer than the boat",
+        "Huge mouth held wide open when feeding at the surface",
+        "Very long gill slits that almost circle the head",
+        "Often seen as a dorsal fin and tail tip moving slowly at the surface"
+      ],
+      "lookalikes": []
+    },
+    {
+      "id": "blueShark",
+      "group": "openWater",
+      "commonName": "Blue shark",
+      "scientificName": "Prionace glauca",
+      "keyFeatures": [
+        "Slim body with a bright blue back and white belly",
+        "Very long, narrow pectoral (side) fins",
+        "Long, pointed snout and large eyes"
+      ],
+      "lookalikes": ["shortfinMako"]
+    },
+    {
+      "id": "porbeagle",
+      "group": "openWater",
+      "commonName": "Porbeagle",
+      "scientificName": "Lamna nasus",
+      "keyFeatures": [
+        "Stocky, torpedo-shaped body with a pointed snout",
+        "White patch at the back edge of the first dorsal fin",
+        "Crescent-shaped tail with two keels (ridges) on the tail stalk"
+      ],
+      "lookalikes": ["shortfinMako"]
+    },
+    {
+      "id": "shortfinMako",
+      "group": "openWater",
+      "commonName": "Shortfin mako",
+      "scientificName": "Isurus oxyrinchus",
+      "keyFeatures": [
+        "Slim torpedo shape with a sharply pointed snout",
+        "Metallic blue back",
+        "Long, curved teeth visible even when the mouth is closed",
+        "No white patch on the dorsal fin (compare with porbeagle)"
+      ],
+      "lookalikes": ["porbeagle", "blueShark"]
+    },
+    {
+      "id": "thresherShark",
+      "group": "openWater",
+      "commonName": "Thresher shark",
+      "scientificName": "Alopias vulpinus",
+      "keyFeatures": [
+        "Upper lobe of the tail is extremely long, about as long as the rest of the body",
+        "May be seen leaping clear of the water"
+      ],
+      "lookalikes": []
+    },
+    {
+      "id": "tope",
+      "group": "slender",
+      "commonName": "Tope",
+      "scientificName": "Galeorhinus galeus",
+      "keyFeatures": [
+        "Slender grey shark with a long, pointed snout",
+        "Large lobe near the tip of the upper tail, which can look like a small second tail",
+        "No spots"
+      ],
+      "lookalikes": ["commonSmoothHound", "starrySmoothHound"]
+    },
+    {
+      "id": "starrySmoothHound",
+      "group": "slender",
+      "commonName": "Starry smooth-hound",
+      "scientificName": "Mustelus asterias",
+      "keyFeatures": [
+        "Grey shark with small white spots scattered over the back and sides",
+        "Blunt snout and two large dorsal fins of similar size"
+      ],
+      "lookalikes": ["commonSmoothHound", "spurdog"]
+    },
+    {
+      "id": "commonSmoothHound",
+      "group": "slender",
+      "commonName": "Common smooth-hound",
+      "scientificName": "Mustelus mustelus",
+      "keyFeatures": [
+        "Plain grey shark with no white spots",
+        "Blunt snout and two large dorsal fins of similar size"
+      ],
+      "lookalikes": ["starrySmoothHound", "tope"]
+    },
+    {
+      "id": "spurdog",
+      "group": "slender",
+      "commonName": "Spurdog",
+      "scientificName": "Squalus acanthias",
+      "keyFeatures": [
+        "Slim grey shark, often with white spots along the sides",
+        "A sharp spine in front of each of the two dorsal fins",
+        "No anal fin (the small fin underneath, near the tail)"
+      ],
+      "lookalikes": ["starrySmoothHound"]
+    },
+    {
+      "id": "smallSpottedCatshark",
+      "group": "catsharks",
+      "commonName": "Small-spotted catshark",
+      "scientificName": "Scyliorhinus canicula",
+      "keyFeatures": [
+        "Small, usually under 1m",
+        "Covered in many small dark spots",
+        "Flaps of skin by the nostrils reach down to the mouth"
+      ],
+      "lookalikes": ["nursehound"]
+    },
+    {
+      "id": "nursehound",
+      "group": "catsharks",
+      "commonName": "Nursehound (greater spotted catshark)",
+      "scientificName": "Scyliorhinus stellaris",
+      "keyFeatures": [
+        "Larger and stockier than the small-spotted catshark, often over 1m",
+        "Fewer, larger dark spots",
+        "Nostril flaps do NOT reach the mouth"
+      ],
+      "lookalikes": ["smallSpottedCatshark"]
+    },
+    {
+      "id": "blackmouthCatshark",
+      "group": "catsharks",
+      "commonName": "Blackmouth catshark",
+      "scientificName": "Galeus melastomus",
+      "keyFeatures": [
+        "Inside of the mouth is black",
+        "Dark saddle-shaped blotches along the back",
+        "A crest of rough scales along the upper edge of the tail",
+        "Usually found in deeper water"
+      ],
+      "lookalikes": ["smallSpottedCatshark"]
+    },
+    {
+      "id": "angelshark",
+      "group": "flattened",
+      "commonName": "Angelshark",
+      "scientificName": "Squatina squatina",
+      "keyFeatures": [
+        "Flattened body with wide, wing-like pectoral fins",
+        "Gill slits on the sides of the head (on a ray they are underneath)",
+        "Often lies buried in sand with only the eyes showing"
+      ],
+      "lookalikes": []
+    },
+    {
+      "id": "sixgillShark",
+      "group": "deepRare",
+      "commonName": "Bluntnose sixgill shark",
+      "scientificName": "Hexanchus griseus",
+      "keyFeatures": [
+        "Six gill slits on each side (most sharks have five)",
+        "Only one dorsal fin, set far back near the tail"
+      ],
+      "lookalikes": []
+    },
+    {
+      "id": "brambleShark",
+      "group": "deepRare",
+      "commonName": "Bramble shark",
+      "scientificName": "Echinorhinus brucus",
+      "keyFeatures": [
+        "Large thorn-like scales scattered over the body",
+        "Two small dorsal fins set far back"
+      ],
+      "lookalikes": []
+    },
+    {
+      "id": "greenlandShark",
+      "group": "deepRare",
+      "commonName": "Greenland shark",
+      "scientificName": "Somniosus microcephalus",
+      "keyFeatures": [
+        "Very large, heavy, and slow-moving",
+        "Small dorsal fins",
+        "Small parasites are often attached to the eyes"
+      ],
+      "lookalikes": []
+    }
+  ]
+}

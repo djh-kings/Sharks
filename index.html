@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shark Sightings</title>
+  <meta name="description" content="Report shark sightings in UK and Irish waters to help scientists and conservation charities.">
+  <meta name="theme-color" content="#0b4f6c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="siteHeader">
+    <a class="siteTitle" href="index.html" aria-current="page">Shark Sightings</a>
+    <nav class="siteNav" aria-label="Main">
+      <a href="report.html">Report</a>
+      <a href="sightings.html">My reports</a>
+      <a href="species.html">Species guide</a>
+    </nav>
+  </header>
+  <div id="offlineBanner" class="banner" hidden>You are offline. You can still make a report; it will be saved on this phone.</div>
+
+  <main>
+    <h1>Seen a shark? Tell us.</h1>
+    <p>Divers, dive masters, and fishers see more sharks than any scientist. Every report you make helps build a picture of where sharks live around the UK and Ireland, and how that is changing.</p>
+    <p>You do not need to be an expert. If you are not sure what you saw, say so, and add a photo if you can.</p>
+
+    <a class="button buttonBig" href="report.html">Report a sighting</a>
+    <a class="button buttonBig buttonSecondary" href="report.html?mode=absence">I looked, but saw no sharks</a>
+
+    <p class="notice" data-pending-visible hidden>
+      Reports on this device waiting to be uploaded: <strong data-pending-count>0</strong>.
+      <a href="sightings.html">See them</a>.
+    </p>
+
+    <div class="card">
+      <h2>Why report "no sharks"?</h2>
+      <p>If we only hear about sightings, the data shows where people go diving, not where sharks live. A record of a dive with no sharks is just as useful to a scientist.</p>
+    </div>
+
+    <div class="card">
+      <h2>Works at sea</h2>
+      <p>Once you have opened this site, it works without a signal. Reports are saved on your phone. You can add it to your home screen from your browser's menu.</p>
+    </div>
+
+    <div class="card">
+      <h2>Who uses the data?</h2>
+      <p>Reports are shared with the Biology Department at King's College School, Wimbledon, and with shark conservation charities. Exact locations are not published, to protect vulnerable species.</p>
+    </div>
+  </main>
+
+  <footer class="siteFooter">
+    <p>A project of King's College School, Wimbledon. This is a development version: the upload service is not running yet, so reports stay on your device.</p>
+    <p>Map data &copy; OpenStreetMap contributors.</p>
+  </footer>
+</body>
+</html>

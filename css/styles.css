@@ -1,0 +1,534 @@
+/* styles.css
+   Mobile first: the main user is on a phone, on a boat, possibly in bright sun
+   with wet hands. So: large text, large touch targets (at least 48px), strong
+   contrast, and one column. Wider screens get a little more room, nothing more. */
+
+:root {
+  --bg: #f4f7f9;
+  --surface: #ffffff;
+  --text: #102a3a;
+  --text-muted: #4a6272;
+  --border: #b9c8d2;
+  --primary: #0b4f6c;
+  --primary-text: #ffffff;
+  --primary-hover: #083a50;
+  --focus: #f0a202;
+  --selected-bg: #e3f1f7;
+  --error: #b00020;
+  --error-bg: #fdecee;
+  --warning-bg: #fff4d6;
+  --warning-text: #5c4300;
+  --success-bg: #e5f5ea;
+  --success-text: #1b5e32;
+  --radius: 10px;
+  --tap: 48px;
+  font-size: 18px;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1b24;
+    --surface: #15293a;
+    --text: #e8f1f6;
+    --text-muted: #a9bfcc;
+    --border: #3a5566;
+    --primary: #5bc0eb;
+    --primary-text: #07202d;
+    --primary-hover: #8fd6f3;
+    --selected-bg: #1f3d52;
+    --error: #ff8a9a;
+    --error-bg: #3a1a20;
+    --warning-bg: #3a3014;
+    --warning-text: #ffe39a;
+    --success-bg: #173222;
+    --success-text: #9be3b2;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* The hidden attribute must always win. Without this, any class that sets
+   "display" (eg .button) would make hidden elements visible again. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--primary);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---- Header and navigation ---- */
+
+.siteHeader {
+  background: var(--primary);
+  color: var(--primary-text);
+  padding: 0.5rem 1rem;
+}
+
+.siteHeader a {
+  color: inherit;
+}
+
+.siteTitle {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--tap);
+}
+
+.siteNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
+.siteNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+.siteNav a[aria-current="page"] {
+  font-weight: 700;
+}
+
+.banner {
+  padding: 0.75rem 1rem;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-weight: 600;
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.notice {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+/* ---- Buttons ---- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.buttonSecondary {
+  background: transparent;
+  color: var(--primary);
+}
+
+.buttonSecondary:hover {
+  background: var(--selected-bg);
+  color: var(--primary);
+}
+
+.buttonBig {
+  width: 100%;
+  font-size: 1.2rem;
+  min-height: 64px;
+  margin: 0.5rem 0;
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* ---- Forms ---- */
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+}
+
+legend,
+.fieldLabel {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  padding: 0;
+}
+
+.field {
+  margin-bottom: 1.25rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="datetime-local"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+}
+
+textarea {
+  min-height: 6rem;
+}
+
+/* Large tappable radio and checkbox rows. */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--tap);
+  padding: 0.5rem 0.75rem;
+  margin: 0.4rem 0;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.choice input {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+
+.choice:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--selected-bg);
+}
+
+.choiceText small {
+  display: block;
+  color: var(--text-muted);
+}
+
+.inlineFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.fieldError {
+  border-color: var(--error) !important;
+}
+
+.errorSummary {
+  background: var(--error-bg);
+  color: var(--error);
+  border-left: 5px solid var(--error);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.errorSummary ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+/* ---- Report steps ---- */
+
+.progress {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.progressBar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.5rem 0 1rem;
+}
+
+.progressBar span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.2s;
+}
+
+.step h2:focus {
+  outline: none;
+}
+
+.stepNav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.stepNav .button {
+  flex: 1;
+}
+
+/* ---- Photos ---- */
+
+.photoList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.photoItem {
+  position: relative;
+  margin: 0;
+}
+
+.photoItem img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  display: block;
+}
+
+.photoItem button {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+/* Visually hidden but still usable by keyboard and screen readers. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- Map ---- */
+
+.map {
+  height: 320px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  margin: 0.75rem 0;
+  z-index: 0;
+}
+
+.mapLarge {
+  height: 420px;
+}
+
+/* ---- Species picker ---- */
+
+.speciesGroup legend {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.05rem;
+}
+
+.groupSilhouette {
+  width: 96px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.speciesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.speciesCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: var(--tap);
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  position: relative;
+}
+
+.speciesCard input {
+  position: absolute;
+  opacity: 0;
+}
+
+.speciesCard:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--selected-bg);
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.speciesCard:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.speciesCardNotSure {
+  margin-bottom: 1.25rem;
+  border-style: dashed;
+}
+
+.speciesCardName {
+  font-weight: 700;
+}
+
+.speciesCardSci,
+.speciesCardHint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.speciesCardSci {
+  font-style: italic;
+}
+
+.speciesDetail {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.speciesDetail h3 {
+  margin: 0 0 0.25rem;
+}
+
+/* ---- Review and reports list ---- */
+
+.summaryList {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+.summaryList dt {
+  font-weight: 700;
+}
+
+.summaryList dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.reportCard h3 {
+  margin: 0 0 0.25rem;
+}
+
+.statusTag {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.guideSpecies h3 {
+  margin-bottom: 0;
+}
+
+.guideSpecies .speciesCardSci {
+  margin-top: 0;
+}
+
+.siteFooter {
+  max-width: 44rem;
+  margin: 2rem auto 0;
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+@media (min-width: 40rem) {
+  .buttonBig {
+    width: auto;
+  }
+}
